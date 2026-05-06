@@ -1,0 +1,934 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                           String                 @id @default(uuid())
+  firebaseUid                  String?                @unique
+  firstName                    String
+  lastName                     String
+  email                        String                 @unique
+  password                     String?
+  phone                        String?
+  dob                          DateTime?
+  gender                       Gender?
+  lg                           Lg?
+  city                         City?
+  state                        State?
+  town                         Town?
+  isEmailVerified              Boolean                @default(false)
+  emailVerificationToken       String?
+  emailVerificationTokenExpiry DateTime?
+  passwordResetToken           String?                @db.Text
+  passwordResetTokenExpiry     DateTime?
+  role                         UserRole               @default(USER)
+  agreedToPolicy               Boolean                @default(false)
+  createdAt                    DateTime               @default(now())
+  updatedAt                    DateTime               @default(now()) @updatedAt
+  adsApproved                  Ad[]                   @relation("AdApprovedBy")
+  reviewedVerifications        BusinessVerification[] @relation("VerificationReviewer")
+  businesses                   Business[]
+  follows                      Follow[]
+  notifications                Notification[]
+  payments                     Payment[]
+  ProductReport                ProductReport[]
+  refreshTokens                RefreshToken[]
+  reviews                      Review[]
+  sponsors                     Sponsorship[]
+  wallet                       Wallet?
+
+  @@index([email])
+  @@map("users")
+}
+
+model RefreshToken {
+  id                String    @id @default(uuid())
+  userId            String
+  tokenHash         String
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  createdByIp       String?
+  replacedByTokenId String?
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Business {
+  id                  String                 @id @default(uuid())
+  userId              String
+  name                String                 @unique
+  slug                String                 @unique
+  description         String                 @db.Text
+  category            BusinessCategory
+  isMadeInOyo         Boolean                @default(false)
+  phone               String?
+  locationBoundary    Json?
+  isVerified          Boolean                @default(false)
+  isBusinessOfTheWeek Boolean                @default(false)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @default(now()) @updatedAt
+  addresses           Address[]
+  ads                 Ad[]
+  images              BusinessImage[]
+  verifications       BusinessVerification[]
+  videos              BusinessVideo[]
+  user                User                   @relation(fields: [userId], references: [id])
+  contactUrls         ContactUrl[]
+  follows             Follow[]
+  analytics           HeatmapAnalytics[]
+  notices             Noticeboard[]
+  payments            Payment[]
+  products            Product[]
+  reviews             Review[]
+  slugHistory         SlugHistory[]
+  topListingAds       TopListingAd[]
+  walletTransactions  WalletTransaction[]
+
+  @@index([name])
+  @@index([category])
+  @@index([isVerified])
+  @@index([isMadeInOyo])
+  @@index([userId], map: "businesses_userId_fkey")
+  @@fulltext([name, description])
+  @@map("businesses")
+}
+
+model SlugHistory {
+  id         String   @id @default(uuid())
+  businessId String
+  slug       String
+  changedAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@index([slug])
+  @@map("slug_history")
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  businessId String
+  address1   String?  @default("Headquarters")
+  address2   String?  @default("Annex")
+  city       City?
+  lg         Lg?
+  town       Town?
+  business   Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@map("addresses")
+}
+
+model BusinessImage {
+  id         String   @id @default(uuid())
+  businessId String
+  imageUrl   String
+  isLogo     Boolean  @default(false)
+  uploadedAt DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@map("business_images")
+}
+
+model BusinessVideo {
+  id               String             @id @default(uuid())
+  businessId       String
+  videoUrl         String
+  likes            Int                @default(0)
+  downloads        Int                @default(0)
+  views            Int                @default(0)
+  boosted          Boolean            @default(false)
+  duration         Int                @default(60)
+  locationBoundary Json?
+  isSponsored      Boolean            @default(false)
+  sponsoredAdId    String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+  business         Business           @relation(fields: [businessId], references: [id])
+  analytics        HeatmapAnalytics[]
+
+  @@index([businessId])
+  @@index([sponsoredAdId])
+  @@map("business_videos")
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  businessId String
+  userId     String
+  rating     Int      @default(0)
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([businessId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+model Noticeboard {
+  id                 String              @id @default(uuid())
+  businessId         String
+  title              String
+  content            String              @db.Text
+  startDate          DateTime?
+  endDate            DateTime?
+  likes              Int                 @default(0)
+  shares             Int                 @default(0)
+  callToAction       String?
+  link               String?
+  boosted            Boolean             @default(false)
+  boostExpiresAt     DateTime?
+  locationBoundary   String?
+  leadFields         Json?
+  createdAt          DateTime            @default(now())
+  contactSubmissions ContactSubmission[]
+  analytics          HeatmapAnalytics[]
+  images             NoticeImage[]
+  business           Business            @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@fulltext([title, content])
+  @@map("noticeboards")
+}
+
+model NoticeImage {
+  id         String      @id @default(uuid())
+  noticeId   String
+  imageUrl   String
+  uploadedAt DateTime    @default(now())
+  notice     Noticeboard @relation(fields: [noticeId], references: [id])
+
+  @@index([noticeId])
+  @@map("notice_images")
+}
+
+model ContactSubmission {
+  id             String      @id @default(uuid())
+  noticeId       String
+  name           String
+  email          String
+  phone          String?
+  additionalData Json?
+  submittedAt    DateTime    @default(now())
+  notice         Noticeboard @relation(fields: [noticeId], references: [id])
+
+  @@index([noticeId])
+  @@map("contact_submissions")
+}
+
+model Sponsorship {
+  id            String    @id @default(uuid())
+  userId        String?
+  businessIds   Json?
+  businessName  String
+  businessEmail String
+  phone         String
+  website       String?
+  logo          String?
+  amount        Float?
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  user          User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sponsorships")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  isRead    Boolean  @default(false)
+  clicks    Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model HeatmapAnalytics {
+  id         String         @id @default(uuid())
+  userId     String?
+  businessId String?
+  videoId    String?
+  noticeId   String?
+  productId  String?
+  pageViews  Int            @default(0)
+  likes      Int            @default(0)
+  shares     Int            @default(0)
+  urlClicks  Int            @default(0)
+  downloads  Int            @default(0)
+  createdAt  DateTime       @default(now())
+  business   Business?      @relation(fields: [businessId], references: [id])
+  notice     Noticeboard?   @relation(fields: [noticeId], references: [id])
+  product    Product?       @relation(fields: [productId], references: [id])
+  video      BusinessVideo? @relation(fields: [videoId], references: [id])
+
+  @@index([businessId])
+  @@index([videoId])
+  @@index([noticeId])
+  @@index([productId])
+  @@index([userId])
+  @@map("heatmap_analytics")
+}
+
+model ContactUrl {
+  id         String      @id @default(uuid())
+  userId     String?
+  businessId String?
+  url        String
+  type       ContactType
+  isPrimary  Boolean     @default(false)
+  business   Business?   @relation(fields: [businessId], references: [id])
+
+  @@index([userId])
+  @@index([businessId])
+  @@map("contact_urls")
+}
+
+model Ad {
+  id           String    @id @default(uuid())
+  userId       String
+  businessId   String
+  type         AdType
+  status       AdStatus  @default(AWAITING_APPROVAL)
+  title        String
+  image        String?
+  videoUrl     String?
+  startDate    DateTime?
+  endDate      DateTime?
+  autoApprove  Boolean   @default(false)
+  impressions  Int       @default(0)
+  clicks       Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+  paymentId    String?
+  approvedById String?
+  approvedBy   User?     @relation("AdApprovedBy", fields: [approvedById], references: [id])
+  business     Business  @relation(fields: [businessId], references: [id])
+  payment      Payment?  @relation(fields: [paymentId], references: [id])
+
+  @@index([businessId])
+  @@index([type])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([approvedById], map: "ads_approvedById_fkey")
+  @@index([paymentId], map: "ads_paymentId_fkey")
+  @@map("ads")
+}
+
+model TopListingAd {
+  id         String     @id @default(uuid())
+  businessId String
+  startDate  DateTime
+  endDate    DateTime
+  toplistad  TopListAd?
+  createdAt  DateTime   @default(now())
+  paymentId  String?
+  business   Business   @relation(fields: [businessId], references: [id])
+  payment    Payment?   @relation(fields: [paymentId], references: [id])
+
+  @@index([businessId])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([paymentId], map: "top_listing_ads_paymentId_fkey")
+  @@map("top_listing_ads")
+}
+
+model Product {
+  id                String             @id @default(uuid())
+  businessId        String
+  title             String
+  description       String             @db.Text
+  price             Float
+  location          String
+  isMadeInOyo       Boolean            @default(false)
+  stock             Int                @default(1)
+  discount          Float?             @default(0)
+  deliveryOption    DeliveryOption
+  category          ProductCategory
+  contactPreference ContactType
+  likes             Int                @default(0)
+  shares            Int                @default(0)
+  isBoosted         Boolean            @default(false)
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now()) @updatedAt
+  analytics         HeatmapAnalytics[]
+  images            ProductImage[]
+  reports           ProductReport[]
+  business          Business           @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@index([category])
+  @@index([isMadeInOyo])
+  @@index([isActive])
+  @@fulltext([title, description])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  imageUrl  String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductReport {
+  id        Int      @id @default(autoincrement())
+  productId String
+  userId    String?
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+  @@map("product_reports")
+}
+
+model BusinessVerification {
+  id                    String             @id @default(uuid())
+  businessId            String
+  natureOfBusiness      String
+  currentAddress        String
+  bankName              String
+  accountNumber         String
+  accountName           String
+  accountType           String
+  certificationType     String?
+  primaryContactName    String?
+  primaryContactPhone   String?
+  primaryContactEmail   String?
+  secondaryContactName  String?
+  secondaryContactPhone String?
+  secondaryContactEmail String?
+  cacCertificateUrl     String
+  memoOfAssociationUrl  String?
+  letterheadUrl         String?
+  chequeUrl             String?
+  paymentAmount         Int                @default(50000)
+  paymentStatus         PaymentStatus      @default(PENDING)
+  status                VerificationStatus @default(PENDING)
+  reviewerNotes         String?
+  submittedAt           DateTime           @default(now())
+  reviewedAt            DateTime?
+  reviewedBy            String?
+  paymentId             String?
+  business              Business           @relation(fields: [businessId], references: [id])
+  payment               Payment?           @relation(fields: [paymentId], references: [id])
+  reviewer              User?              @relation("VerificationReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([businessId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([paymentId], map: "business_verifications_paymentId_fkey")
+  @@index([reviewedBy], map: "business_verifications_reviewedBy_fkey")
+  @@map("business_verifications")
+}
+
+model Payment {
+  id                   String                 @id @default(uuid())
+  userId               String
+  businessId           String?
+  amount               Float
+  status               PaymentStatus          @default(PENDING)
+  purpose              PaymentPurpose
+  reference            String                 @unique
+  metadata             Json?
+  createdAt            DateTime               @default(now())
+  paidAt               DateTime?
+  adId                 String?
+  noticeId             String?
+  verificationId       String?
+  sponsorshipId        String?
+  topListingAdId       String?
+  Ad                   Ad[]
+  BusinessVerification BusinessVerification[]
+  business             Business?              @relation(fields: [businessId], references: [id])
+  user                 User                   @relation(fields: [userId], references: [id])
+  TopListingAd         TopListingAd[]
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([status])
+  @@index([purpose])
+  @@map("payments")
+}
+
+model Wallet {
+  id           String              @id @default(uuid())
+  userId       String              @unique
+  balance      Float               @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @default(now()) @updatedAt
+  transactions WalletTransaction[]
+  user         User                @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id         String            @id @default(uuid())
+  walletId   String
+  amount     Float
+  type       TransactionType
+  purpose    PaymentPurpose
+  reference  String?
+  businessId String?
+  status     TransactionStatus @default(SUCCESS)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @default(now()) @updatedAt
+  business   Business?         @relation(fields: [businessId], references: [id])
+  wallet     Wallet            @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@index([businessId])
+  @@index([type])
+  @@index([status])
+  @@map("wallet_transactions")
+}
+
+model Follow {
+  id         String   @id @default(uuid())
+  userId     String?
+  businessId String
+  name       String
+  email      String?
+  phone      String?
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+  @@index([userId])
+  @@map("follows")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  date        DateTime
+  imageUrl    String?
+  link        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@map("events")
+}
+
+model TherapySessionRequest {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  message   String        @db.Text
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now()) @updatedAt
+
+  @@map("therapy_session_requests")
+}
+
+model BlogPost {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.LongText
+  mediaUrls String   @db.Text
+  likes     Int      @default(0)
+  shares    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("blog_posts")
+}
+
+model Pricing {
+  id          String           @id @default(uuid())
+  category    pricing_category
+  title       String
+  description String?          @db.Text
+  purpose     pricing_purpose
+  amount      Float
+  currency    String           @default("NGN")
+  benefit     String           @default("Best for business awareness")
+  url         String           @default("https://debisi.ng/login")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @default(now()) @updatedAt
+
+  @@map("pricings")
+}
+
+model SponsorSetting {
+  id        String   @id @default(uuid())
+  title     String
+  image     String   @db.Text
+  url       String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("sponsor_settings")
+}
+
+model TopHeaderSetting {
+  id        String   @id @default(uuid())
+  text      String?  @db.Text
+  link      String?  @db.Text
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("top_header_settings")
+}
+
+model WebBannerSetting {
+  id        String   @id @default(uuid())
+  title     String?
+  text      String?  @db.Text
+  image     String?  @db.Text
+  url       String?  @db.Text
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("web_banner_settings")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AdType {
+  WEB_BANNER
+  IN_APP_NOTIFICATION
+  EVENTS
+  SPONSOR
+}
+
+enum AdStatus {
+  AWAITING_APPROVAL
+  APPROVED
+  REJECTED
+  PUBLISHED
+  EXPIRED
+}
+
+enum Lg {
+  I_DO_NOT_STAY_IN_OYO
+  Afijio
+  Akinyele
+  Atiba
+  Atisbo
+  Egbeda
+  Ibadan_North
+  Ibadan_North_East
+  Ibadan_North_West
+  Ibadan_South_East
+  Ibadan_South_West
+  Ibarapa_Central
+  Ibarapa_East
+  Ibarapa_North
+  Ido
+  Irepo
+  Iseyin
+  Itesiwaju
+  Iwajowa
+  Kajola
+  Lagelu
+  Ogbomosho_North
+  Ogbomosho_South
+  Ogo_Oluwa
+  Olorunsogo
+  Oluyole
+  Ona_Ara
+  Orelope
+  Ori_Ire
+  Oyo_East
+  Oyo_West
+  Saki_East
+  Saki_West
+  Surulere
+}
+
+enum State {
+  OUTSIDE_NIGERIA
+  Abia
+  Adamawa
+  Akwa_Ibom
+  Anambra
+  Bauchi
+  Bayelsa
+  Benue
+  Borno
+  Cross_River
+  Delta
+  Ebonyi
+  Edo
+  Ekiti
+  Enugu
+  FCT
+  Gombe
+  Imo
+  Jigawa
+  Kaduna
+  Kano
+  Katsina
+  Kebbi
+  Kogi
+  Kwara
+  Lagos
+  Nasarawa
+  Niger
+  Ogun
+  Ondo
+  Osun
+  Plateau
+  Rivers
+  Sokoto
+  Taraba
+  Yobe
+  Zamfara
+}
+
+enum City {
+  Ibadan
+  Ogbomosho
+  Oyo
+  Iseyin
+  Saki
+}
+
+enum Town {
+  Mokola
+  Bodija
+  Agodi
+  Iwo_Road
+  Dugbe
+  Apata
+  Sango
+  UI
+  Agbowo
+  Samonda
+  Ojoo
+  Alalubosa
+  Bashorun
+  Felele
+  Jericho
+  Oluyole
+  Challenge
+  Olorunsogo
+  Onireke
+  Eleyele
+  Eruwa
+  Kisi
+  Igboho
+  Igbeti
+  Awe
+  Ilora
+  Oja_ba
+  Beere
+  Foko
+  Labiran
+  OkeAdo
+  OkeBola
+  OkeOffa
+  OkePadi
+  Yemetu
+  Akobo
+  Egbeda
+  Olodo
+  Monatan
+  Olorunda
+  Orogun
+  Ologuneru
+  Adegbayi
+  Oje
+  Okeho
+  Lanlate
+  Lalupon
+  Fiditi
+  Igbo_Ora
+  Idere
+  Moniya
+  Akanran
+  Apatere
+  Adeoyo
+  Idi_Ayunre
+  Olanla
+  Olojuoro
+  Osekan
+  Podo
+  Apete
+  Ajibode
+  Sepeteri
+  Tede
+  Iwere_Ile
+  Ago_Are
+  Ilero
+  Akinyele
+  Alakia
+  Apomu
+  Jobele
+  Omi_Adio
+  Otu
+}
+
+enum ContactType {
+  INSTAGRAM
+  FACEBOOK
+  X
+  TIKTOK
+  WEBSITE
+  WHATSAPP
+  PHONE
+  TELEGRAM
+  EMAIL
+}
+
+enum TopListAd {
+  BUSINESS_TOPLIST
+  NOTICE_TOPLIST
+  PRODUCT_TOPLIST
+}
+
+enum BusinessCategory {
+  AGRIBUSINESS
+  MANUFACTURING
+  RETAIL_WHOLESALE
+  TECHNOLOGY
+  HEALTHCARE
+  EDUCATION
+  TOURISM_HOSPITALITY
+  REAL_ESTATE
+  TRANSPORT_LOGISTICS
+  FINANCIAL_SERVICES
+  ENERGY
+  MINING
+  CREATIVE_ENTERTAINMENT
+  PROFESSIONAL_SERVICES
+  ENVIRONMENTAL_SERVICES
+  SECURITY_SERVICES
+  TELECOMMUNICATIONS
+  MEDIA_PUBLISHING
+  AUTOMOTIVE
+  PERSONAL_SERVICES
+  HOUSEHOLD_SERVICES
+}
+
+enum ProductCategory {
+  ELECTRONICS
+  FASHION
+  HOME_GARDEN
+  BEAUTY_HEALTH
+  SPORTS_OUTDOOR
+  BOOKS_MEDIA
+  AUTOMOTIVE
+  FOOD_BEVERAGES
+  TOYS_GAMES
+  ART_CRAFTS
+  JEWELRY_ACCESSORIES
+  PET_SUPPLIES
+  OFFICE_SUPPLIES
+  MUSICAL_INSTRUMENTS
+  OTHER
+}
+
+enum DeliveryOption {
+  PICKUP_ONLY
+  DELIVERY_ONLY
+  BOTH_OPTIONS
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentPurpose {
+  Top_List_Biz
+  Top_List_Product
+  Sponsored_Video
+  Top_List_Notice
+  Biz_Verification
+  Sponsor
+  Web_Banner
+  Events
+  In_app_notification
+  Wallet_Funding
+  Notice_Boost
+}
+
+enum TransactionType {
+  FUNDING
+  DEDUCTION
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum RequestStatus {
+  PENDING
+  CONTACTED
+  RESOLVED
+}
+
+enum pricing_category {
+  AD_CATEGORY
+  TOP_LIST_CATEGORY
+  OTHER_ADS
+}
+
+enum pricing_purpose {
+  Top_List_Biz
+  Top_List_Product
+  Sponsored_Video
+  Top_List_Notice
+  Biz_Verification
+  Sponsor
+  Web_Banner
+  Events
+  In_app_notification
+  Wallet_Funding
+  Notice_Boost
+}
