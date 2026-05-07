@@ -4,9 +4,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "npx prisma migrate deploy && node src/server.js",
-    "build": "npx prisma generate",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
+    "migrate": "prisma migrate deploy"
   },
     "engines": {
     "node": ">=18.0.0"
