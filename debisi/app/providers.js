@@ -6,7 +6,10 @@ import { ApolloProvider } from '@apollo/client';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { AuthProvider } from '../contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
-import { auth } from '../config/firebase';
+import { auth, analytics } from '../config/firebase';
+import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { logEvent } from 'firebase/analytics';
 
 // ─── Build Apollo Client ONCE outside the component ──────────────────────────
 // Auth link calls Firebase directly to get a fresh (auto-refreshed) token
@@ -53,12 +56,29 @@ function buildApolloClient() {
 // Singleton — created once per browser session, not on every render
 const apolloClient = buildApolloClient();
 
+// ─── Analytics Page View Tracker ─────────────────────────────────────────────
+
+function AnalyticsProvider({ children }) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    analytics.then((instance) => {
+      if (instance) {
+        logEvent(instance, 'page_view', { page_path: pathname });
+      }
+    });
+  }, [pathname]);
+
+  return children;
+}
+
 // ─── Providers Component ──────────────────────────────────────────────────────
 
 export function Providers({ children }) {
   return (
     <ApolloProvider client={apolloClient}>
       <AuthProvider>
+        <AnalyticsProvider>
         {children}
         <Toaster
           position="top-right"
@@ -84,6 +104,7 @@ export function Providers({ children }) {
             },
           }}
         />
+        </AnalyticsProvider>
       </AuthProvider>
     </ApolloProvider>
   );
