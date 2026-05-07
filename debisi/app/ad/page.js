@@ -134,6 +134,12 @@ const RequestAd = () => {
       const selectedType = adTypes.find(type => type.id === formData.adType);
       const selectedPricing = selectedType?.pricing.find(tier => tier.id === formData.pricingTier);
 
+      // Calculate end date based on duration
+      const durationInDays = selectedPricing.duration.includes('month') ? 30 : 
+                            selectedPricing.duration.includes('2 weeks') ? 14 : 7;
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + durationInDays);
+
       await requestAdMutation({
         variables: {
           input: {
@@ -141,10 +147,10 @@ const RequestAd = () => {
             type: formData.adType.toUpperCase().replace(/-/g, '_'),
             title: `${formData.company} - ${selectedType.label}`,
             image: imageUrl,
-            message: messageContent || formData.message,
+            message: formData.message || messageContent,
             amount: parseFloat(selectedPricing.price),
             startDate: new Date().toISOString(),
-            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default 1 week
+            endDate: endDate.toISOString(),
           }
         }
       });
@@ -169,7 +175,7 @@ const RequestAd = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
