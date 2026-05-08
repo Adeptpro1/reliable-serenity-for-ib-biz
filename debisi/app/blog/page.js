@@ -72,7 +72,7 @@ export default function BlogPage() {
             <div className="text-5xl mb-4">📡</div>
             <h2 className="text-2xl font-bold text-purple-900 mb-2">Connection Issue</h2>
             <p className="text-gray-600 mb-6">
-              We're having trouble reaching our servers. Please check your internet connection or try again later.
+              We&apos;re having trouble reaching our servers. Please check your internet connection or try again later.
             </p>
             <button 
               onClick={() => refetch()}
@@ -108,7 +108,7 @@ export default function BlogPage() {
             <div className="text-6xl mb-6">✍️</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-3">No Stories Found</h2>
             <p className="text-gray-600">
-              We're currently preparing some amazing stories for you. Please check back later for the latest updates!
+              We&apos;re currently preparing some amazing stories for you. Please check back later for the latest updates!
             </p>
           </div>
         ) : (
