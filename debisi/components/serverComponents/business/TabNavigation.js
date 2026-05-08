@@ -169,9 +169,12 @@ export default function TabNavigation({
   const filteredBusinesses = useMemo(() => {
     let items = businesses;
     if (searchTerm) {
-      const terms = searchTerm.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      const terms = searchTerm
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
       items = items.filter((b) => {
-        return terms.some(t => {
+        return terms.some((t) => {
           const addressMatch = b.addresses?.some(
             (addr) =>
               addr.town?.toLowerCase().includes(t) ||
@@ -222,14 +225,21 @@ export default function TabNavigation({
   const filteredVideos = useMemo(() => {
     let items = videos;
     if (searchTerm) {
-      const terms = searchTerm.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      const terms = searchTerm
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
       items = items.filter((v) =>
-        terms.some(t =>
-          v.business?.name?.toLowerCase().includes(t) ||
-          v.business?.description?.toLowerCase().includes(t) ||
-          v.business?.category?.replace(/_/g, " ").toLowerCase().includes(t) ||
-          v.locationBoundary?.toLowerCase().includes(t)
-        )
+        terms.some(
+          (t) =>
+            v.business?.name?.toLowerCase().includes(t) ||
+            v.business?.description?.toLowerCase().includes(t) ||
+            v.business?.category
+              ?.replace(/_/g, " ")
+              .toLowerCase()
+              .includes(t) ||
+            v.locationBoundary?.toLowerCase().includes(t),
+        ),
       );
     }
     return items;
@@ -238,14 +248,18 @@ export default function TabNavigation({
   const filteredNotices = useMemo(() => {
     let items = notices;
     if (searchTerm) {
-      const terms = searchTerm.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      const terms = searchTerm
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
       items = items.filter((n) =>
-        terms.some(t =>
-          n.title?.toLowerCase().includes(t) ||
-          n.content?.toLowerCase().includes(t) ||
-          n.business?.name?.toLowerCase().includes(t) ||
-          n.business?.category?.replace(/_/g, " ").toLowerCase().includes(t)
-        )
+        terms.some(
+          (t) =>
+            n.title?.toLowerCase().includes(t) ||
+            n.content?.toLowerCase().includes(t) ||
+            n.business?.name?.toLowerCase().includes(t) ||
+            n.business?.category?.replace(/_/g, " ").toLowerCase().includes(t),
+        ),
       );
     }
     return items;
@@ -355,14 +369,25 @@ export default function TabNavigation({
 
       {/* Tab switcher */}
       <div
-        className="flex bg-black w-full rounded-xl overflow-hidden"
-        style={{ padding: "10px", marginBottom: "24px" }}
+        className="flex bg-black w-full rounded-xl overflow-x-auto no-scrollbar flex-nowrap"
+        style={{ 
+          padding: "10px", 
+          marginBottom: "24px",
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
+        <style jsx>{`
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabSwitch(tab.id)}
-            className={`relative flex-1 p-4 text-center font-bold text-sm transition-all duration-300 ${
+            className={`relative flex-1 p-4 text-center font-bold text-sm transition-all duration-300 flex-shrink-0 min-w-[120px] ${
               activeTab === tab.id ? "text-white" : "text-gray-500"
             }`}
           >
