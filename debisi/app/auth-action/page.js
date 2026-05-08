@@ -25,25 +25,6 @@ const AuthActionContent = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!mode || !oobCode) {
-      setStatus('error');
-      setErrorMessage('Invalid or expired link.');
-      return;
-    }
-
-    if (mode === 'verifyEmail') {
-      handleVerifyEmail();
-    } else if (mode === 'resetPassword') {
-      setStatus('form');
-    } else if (mode === 'recoverEmail') {
-      handleRecoverEmail();
-    } else {
-      setStatus('error');
-      setErrorMessage('Unknown request type.');
-    }
-  }, [mode, oobCode, handleVerifyEmail, handleRecoverEmail]);
-
   // Handler: Email Verification
   const handleVerifyEmail = useCallback(async () => {
     try {
@@ -73,6 +54,25 @@ const AuthActionContent = () => {
       setErrorMessage(err.message || "Failed to recover account.");
     }
   }, [oobCode, router]);
+
+  useEffect(() => {
+    if (!mode || !oobCode) {
+      setStatus('error');
+      setErrorMessage('Invalid or expired link.');
+      return;
+    }
+
+    if (mode === 'verifyEmail') {
+      handleVerifyEmail();
+    } else if (mode === 'resetPassword') {
+      setStatus('form');
+    } else if (mode === 'recoverEmail') {
+      handleRecoverEmail();
+    } else {
+      setStatus('error');
+      setErrorMessage('Unknown request type.');
+    }
+  }, [mode, oobCode, handleVerifyEmail, handleRecoverEmail]);
 
   // Handler: Password Reset Submission
   const handleResetPassword = async (e) => {
