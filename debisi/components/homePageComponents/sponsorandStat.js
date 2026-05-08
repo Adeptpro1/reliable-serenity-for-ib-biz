@@ -106,15 +106,31 @@ export default function SponsorsAndStats() {
           ) : adsError ? (
             <div style={{ color: "#999", fontStyle: "italic" }}>Become our first featured sponsor today.</div>
           ) : (
-            <div style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "25px",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: "15px"
-            }}>
-              {sponsors.map((sponsor) => (
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "25px",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "15px",
+            minHeight: "60px"
+          }}>
+            {adsLoading ? (
+              <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} style={{ width: '100px', height: '40px', background: '#f0f0f0', borderRadius: '10px', animation: 'pulse 1.5s infinite' }} />
+                ))}
+              </div>
+            ) : adsError ? (
+              <Link 
+                href="/sponsors" 
+                className="hover:text-red-600 transition-colors"
+                style={{ color: "#999", fontStyle: "italic", fontSize: "14px", textDecoration: "underline" }}
+              >
+                Become our first featured sponsor today.
+              </Link>
+            ) : (
+              sponsors.map((sponsor) => (
                 <motion.a
                   key={sponsor.id}
                   whileHover={{ scale: 1.05, filter: "grayscale(0%)" }}
@@ -138,33 +154,36 @@ export default function SponsorsAndStats() {
                     />
                   </div>
                 </motion.a>
-              ))}
-              
-              <Link
-                href="/sponsors"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "8px 16px",
-                  border: "1px dashed #ccc",
-                  borderRadius: "50px",
-                  color: "#999",
-                  fontSize: "13px",
-                  textDecoration: "none",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#D22730";
-                  e.currentTarget.style.color = "#D22730";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#ccc";
-                  e.currentTarget.style.color = "#999";
-                }}
-              >
-                + Join Sponsors
-              </Link>
-            </div>
+              ))
+            )}
+            
+            <Link
+              href="/sponsors"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "10px 20px",
+                border: "1px dashed #ccc",
+                borderRadius: "50px",
+                color: "#999",
+                fontSize: "13px",
+                textDecoration: "none",
+                transition: "all 0.3s ease",
+                backgroundColor: "white",
+                whiteSpace: "nowrap"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#D22730";
+                e.currentTarget.style.color = "#D22730";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#ccc";
+                e.currentTarget.style.color = "#999";
+              }}
+            >
+              + Join Sponsors
+            </Link>
+          </div>
           )}
         </div>
 
