@@ -7,6 +7,7 @@ import { gql, useQuery, useMutation } from "@apollo/client";
 import { useParams, useRouter } from "next/navigation";
 import Footer from "@/components/layoutComponents/Footer";
 import Image from "next/image";
+import Link from "next/link";
 
 const GET_BLOG = gql`
   query BlogPost($id: ID!) {
@@ -93,7 +94,7 @@ export default function BlogDetailPage() {
             <div className="text-5xl mb-4">📡</div>
             <h2 className="text-2xl font-bold text-purple-900 mb-2">Connection Issue</h2>
             <p className="text-gray-600 mb-6">
-              We're having trouble reaching our servers to load this story. Please check your connection.
+              We&apos;re having trouble reaching our servers to load this story. Please check your connection.
             </p>
             <button 
               onClick={() => refetch()}
@@ -116,7 +117,7 @@ export default function BlogDetailPage() {
           <div className="text-6xl mb-6">🔍</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-3">Story Not Found</h2>
           <p className="text-gray-600 mb-8">
-            The blog post you're looking for doesn't seem to exist or has been moved.
+            The blog post you&apos;re looking for doesn&apos;t seem to exist or has been moved.
           </p>
           <Link href="/blog" className="px-6 py-2 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition-colors">
             Back to Blog
