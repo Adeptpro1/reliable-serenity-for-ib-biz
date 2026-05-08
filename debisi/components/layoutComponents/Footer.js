@@ -1,7 +1,13 @@
+"use client";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 function Footer() {
+  const { user, isAuthenticated } = useAuth();
   const thisYear = new Date().getFullYear();
+
+  const profileLink = isAuthenticated && user ? `/dashboard/${user.id || user.uid}` : "/login";
+
   return (
     <div className="footerBox">
       <div className="footerBoxDetails" style={{ marginBottom: "15px" }}>
@@ -39,7 +45,7 @@ function Footer() {
                   <Link href="/about">
                     <li className="mb-2">About Us</li>
                   </Link>
-                  <Link href="/dashboard">
+                  <Link href={profileLink}>
                     <li className="mb-2">My Profile</li>
                   </Link>
                   {/* <Link href="/sponsors">
