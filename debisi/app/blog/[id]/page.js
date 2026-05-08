@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import ScrollFooter from "@/components/layoutComponents/ScrollFooter";
 import DynamicHeader from "@/components/layoutComponents/DynamicHeader";
 import { gql, useQuery, useMutation } from "@apollo/client";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Footer from "@/components/layoutComponents/Footer";
 import Image from "next/image";
 
@@ -42,7 +42,11 @@ const SHARE_POST = gql`
 
 export default function BlogDetailPage() {
   const { id } = useParams();
-  const { data, loading, refetch } = useQuery(GET_BLOG, { variables: { id } });
+  const router = useRouter();
+  const { data, loading, error, refetch } = useQuery(GET_BLOG, { 
+    variables: { id },
+    skip: !id 
+  });
   const [likePost] = useMutation(LIKE_POST);
   const [sharePost] = useMutation(SHARE_POST);
   const [isScrollingUp, setIsScrollingUp] = useState(false);
@@ -68,8 +72,60 @@ export default function BlogDetailPage() {
     };
   }, [lastScrollY]);
 
-  if (loading) return <p className="text-center py-10">Loading...</p>;
-  if (!data?.blogPost) return <p className="text-center py-10">Blog post not found.</p>;
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DynamicHeader />
+        <div className="flex-1 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <DynamicHeader />
+        <div className="flex-1 flex flex-col justify-center items-center px-4 text-center">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md border border-purple-100">
+            <div className="text-5xl mb-4">📡</div>
+            <h2 className="text-2xl font-bold text-purple-900 mb-2">Connection Issue</h2>
+            <p className="text-gray-600 mb-6">
+              We're having trouble reaching our servers to load this story. Please check your connection.
+            </p>
+            <button 
+              onClick={() => refetch()}
+              className="px-6 py-2 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!data?.blogPost) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <DynamicHeader />
+        <div className="flex-1 flex flex-col justify-center items-center px-4 text-center">
+          <div className="text-6xl mb-6">🔍</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Story Not Found</h2>
+          <p className="text-gray-600 mb-8">
+            The blog post you're looking for doesn't seem to exist or has been moved.
+          </p>
+          <Link href="/blog" className="px-6 py-2 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-700 transition-colors">
+            Back to Blog
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const { title, content, mediaUrls, likes, shares } = data.blogPost;
 
@@ -110,7 +166,7 @@ export default function BlogDetailPage() {
       <div className="max-w-3xl bg-white rounded-2xl shadow-md" style={{ padding: '24px', marginTop: '16px', marginBottom: '16px', marginLeft: 'auto', marginRight: 'auto' }}>
         {/* Back Button */}
         <button
-          onClick={() => window.history.back()}
+          onClick={() => router.back()}
           className="inline-flex items-center hover:text-blue-800 font-medium transition-colors"
           style={{ marginBottom: '24px' }}
         >
