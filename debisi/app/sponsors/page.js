@@ -115,7 +115,7 @@ const Sponsors = () => {
               <p style={{ color: "#666", marginBottom: "30px" }}>Gain year-round exposure across all platform activations and digital assets.</p>
               
               <div style={{ 
-                fontSize: "42px", 
+                fontSize: "clamp(24px, 8vw, 42px)", 
                 fontWeight: "900", 
                 color: "#111", 
                 marginBottom: "5px",
