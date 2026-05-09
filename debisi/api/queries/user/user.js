@@ -15,6 +15,7 @@ export const GET_CURRENT_USER = gql`
       city
       town
       lg
+      isProfileComplete
       businesses {
         id
         name
