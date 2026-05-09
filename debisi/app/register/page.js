@@ -81,7 +81,7 @@ export default function Register() {
     dateOfBirth: "",
   });
 
-  const [registerMutation, { loading: isLoading }] = useMutation(
+  const [registerMutation, { loading: mutationLoading }] = useMutation(
     REGISTER_USER,
     {
       onCompleted: () => {
@@ -91,6 +91,7 @@ export default function Register() {
     },
   );
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   // Add LG and City options
@@ -346,6 +347,7 @@ export default function Register() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
     try {
       // 1. Register in Firebase
       // Imports are at the top of the file
@@ -360,7 +362,7 @@ export default function Register() {
       await sendEmailVerification(firebaseUser);
 
       // 3. Sync with Prisma backend
-      const { town, city, state, ...otherFields } = formData;
+      const { town, city, state, password, ...otherFields } = formData;
       await registerMutation({
         variables: {
           ...otherFields,
@@ -378,6 +380,7 @@ export default function Register() {
       router.push("/login");
     } catch (err) {
       console.error("Registration error:", err);
+      setIsSubmitting(false);
 
       if (err.code === "auth/email-already-in-use") {
         toast.error(
@@ -955,7 +958,7 @@ export default function Register() {
               <div className="" style={{ marginTop: "5px" }}>
                 <motion.button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   style={{
@@ -964,10 +967,10 @@ export default function Register() {
                     marginTop: "5px",
                   }}
                   className={`group relative w-full flex justify-center border border-transparent text-sm font-medium rounded-lg text-white ${
-                    isLoading ? "cursor-not-allowed" : "hover:bg-blue-700"
+                    isSubmitting ? "cursor-not-allowed" : "hover:bg-blue-700"
                   } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg hover:shadow-xl`}
                 >
-                  {isLoading ? (
+                  {isSubmitting ? (
                     <svg
                       className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                       xmlns="http://www.w3.org/2000/svg"
@@ -989,7 +992,7 @@ export default function Register() {
                       ></path>
                     </svg>
                   ) : null}
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {isSubmitting ? "Creating account..." : "Create Account"}
                 </motion.button>
               </div>
             </div>
