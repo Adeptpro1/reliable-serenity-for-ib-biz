@@ -150,17 +150,6 @@ function BusinessView({
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
 
-  // Activity Tracking
-  useEffect(() => {
-    const idToTrack = businessId || propId;
-    if (idToTrack && !hasTrackedView) {
-      trackActivity({
-        variables: { input: { businessId: idToTrack, activityType: "VIEW" } },
-      }).catch(() => {});
-      setHasTrackedView(true);
-    }
-  }, [businessId, propId, hasTrackedView, trackActivity]);
-
   const {
     data: qData,
     loading: qLoading,
@@ -177,16 +166,6 @@ function BusinessView({
     fetchPolicy: "network-only", // Ensure we get fresh data from DB
   });
 
-  useEffect(() => {
-    if (shareData?.businessBySlug) {
-      setShares(shareData.businessBySlug.shares);
-    }
-  }, [shareData]);
-
-  if (qError) {
-    console.error("GraphQL Error in BusinessView:", qError);
-  }
-
   const { data: pData } = useQuery(GET_BUSINESS_PRODUCTS, {
     variables: {
       businessId: qData?.businessBySlug?.id || businessId || propId,
@@ -196,6 +175,27 @@ function BusinessView({
 
   const [createReview] = useMutation(CREATE_REVIEW);
   const [trackActivity] = useMutation(TRACK_ACTIVITY);
+
+  // Activity Tracking
+  useEffect(() => {
+    const idToTrack = businessId || propId;
+    if (idToTrack && !hasTrackedView) {
+      trackActivity({
+        variables: { input: { businessId: idToTrack, activityType: "VIEW" } },
+      }).catch(() => {});
+      setHasTrackedView(true);
+    }
+  }, [businessId, propId, hasTrackedView, trackActivity]);
+
+  useEffect(() => {
+    if (shareData?.businessBySlug) {
+      setShares(shareData.businessBySlug.shares);
+    }
+  }, [shareData]);
+
+  if (qError) {
+    console.error("GraphQL Error in BusinessView:", qError);
+  }
 
   useEffect(() => {
     if (!authLoading) {
