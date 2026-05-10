@@ -940,6 +940,52 @@ function Dashboard({ userData }) {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
             style={{ gap: "24px", marginTop: "0px" }}
           >
+            {/* Register Business Custom Card */}
+            <div
+              className={`bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col ${userBusinesses.length >= 2 ? "opacity-80" : "hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300"}`}
+              style={{ padding: "24px" }}
+            >
+              <div
+                className="flex items-center"
+                style={{ marginBottom: "16px" }}
+              >
+                <div
+                  className="bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100"
+                  style={{ width: "48px", height: "48px" }}
+                >
+                  <span className="text-2xl">🏪</span>
+                </div>
+                <h2
+                  className="text-lg font-bold text-slate-800"
+                  style={{ marginLeft: "16px" }}
+                >
+                  Register Business
+                </h2>
+              </div>
+              <p
+                className="text-sm font-medium text-slate-500 flex-grow"
+                style={{ marginBottom: "24px", lineHeight: "1.6" }}
+              >
+                {userBusinesses.length >= 2
+                  ? "You have reached the maximum limit of 2 businesses."
+                  : "Not a business owner? Register your business now!"}
+              </p>
+              <button
+                onClick={() => setShowRegisterModal(true)}
+                disabled={userBusinesses.length >= 2}
+                className={`w-full rounded-2xl font-bold transition-all shadow-sm border ${
+                  userBusinesses.length >= 2
+                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200"
+                }`}
+                style={{ padding: "12px" }}
+              >
+                {userBusinesses.length >= 2
+                  ? "Limit Reached"
+                  : "Register Business"}
+              </button>
+            </div>
+
             {[
               // {
               //   id: "current-videos",
@@ -1044,52 +1090,6 @@ function Dashboard({ userData }) {
                 </button>
               </div>
             ))}
-
-            {/* Register Business Custom Card */}
-            <div
-              className={`bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 flex flex-col ${userBusinesses.length >= 2 ? "opacity-80" : "hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300"}`}
-              style={{ padding: "24px" }}
-            >
-              <div
-                className="flex items-center"
-                style={{ marginBottom: "16px" }}
-              >
-                <div
-                  className="bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100"
-                  style={{ width: "48px", height: "48px" }}
-                >
-                  <span className="text-2xl">🏪</span>
-                </div>
-                <h2
-                  className="text-lg font-bold text-slate-800"
-                  style={{ marginLeft: "16px" }}
-                >
-                  Register Business
-                </h2>
-              </div>
-              <p
-                className="text-sm font-medium text-slate-500 flex-grow"
-                style={{ marginBottom: "24px", lineHeight: "1.6" }}
-              >
-                {userBusinesses.length >= 2
-                  ? "You have reached the maximum limit of 2 businesses."
-                  : "Not a business owner? Register your business now!"}
-              </p>
-              <button
-                onClick={() => setShowRegisterModal(true)}
-                disabled={userBusinesses.length >= 2}
-                className={`w-full rounded-2xl font-bold transition-all shadow-sm border ${
-                  userBusinesses.length >= 2
-                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200"
-                }`}
-                style={{ padding: "12px" }}
-              >
-                {userBusinesses.length >= 2
-                  ? "Limit Reached"
-                  : "Register Business"}
-              </button>
-            </div>
 
             {/* Request Ad Custom Card
             <div
