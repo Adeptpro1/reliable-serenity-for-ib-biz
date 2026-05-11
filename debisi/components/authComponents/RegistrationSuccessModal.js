@@ -56,7 +56,7 @@ export default function RegistrationSuccessModal({ isOpen, onClose }) {
                 Verify Your Email
               </p>
               <p className="text-sm text-blue-800 leading-relaxed">
-                We've sent a verification link to your email address. 
+                We&apos;ve sent a verification link to your email address. 
                 <br /><br />
                 Please check your <span className="font-bold">Inbox</span> or <span className="font-bold">Spam folder</span> to verify your account so you can log in to your dashboard.
               </p>
