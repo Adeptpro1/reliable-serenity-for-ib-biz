@@ -9,6 +9,7 @@ import logo from "../../images/debisi_logo.png";
 import { useMutation } from "@apollo/client";
 import { REGISTER_USER } from "@/api/queries/auth/auth";
 import PolicyModal from "@/components/authComponents/PolicyModal";
+import RegistrationSuccessModal from "@/components/authComponents/RegistrationSuccessModal";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { auth as firebaseAuth } from "@/config/firebase";
@@ -65,6 +66,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   // const [error, setError] = useState(null);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -82,13 +84,7 @@ export default function Register() {
   });
 
   const [registerMutation, { loading: mutationLoading }] = useMutation(
-    REGISTER_USER,
-    {
-      onCompleted: () => {
-        router.push("/login");
-      },
-      // Error handling is handled in handleSubmit catch block
-    },
+    REGISTER_USER
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -374,10 +370,8 @@ export default function Register() {
           agreedToPolicy: formData.agreeToPolicy,
         },
       });
-      toast.success(
-        "Account created successfully! Please check your email to verify.",
-      );
-      router.push("/login");
+      setShowSuccessModal(true);
+      setIsSubmitting(false);
     } catch (err) {
       console.error("Registration error:", err);
       setIsSubmitting(false);
@@ -418,6 +412,12 @@ export default function Register() {
       <PolicyModal
         isOpen={showPolicyModal}
         onClose={() => setShowPolicyModal(false)}
+      />
+
+      {/* Success Modal */}
+      <RegistrationSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
       />
 
       <div
