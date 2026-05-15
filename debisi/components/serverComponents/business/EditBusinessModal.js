@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@apollo/client";
 import { UPDATE_BUSINESS } from "@/api/mutations/business/business";
-import { UPLOAD_IMAGE } from "@/api/mutations/common";
+import { UPLOAD_IMAGE, DELETE_IMAGE } from "@/api/mutations/common";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatList, formatLabel } from "@/utils/formatters";
@@ -24,8 +24,14 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
   const businessNameValue = watch("businessName", business?.name || "");
   const descriptionValue = watch("description", business?.description || "");
   const phoneValue = watch("phone", business?.phone || "");
-  const primaryAddressValue = watch("primaryAddress", business?.addresses?.[0]?.address1 || "");
-  const additionalAddressValue = watch("additionalAddress", business?.addresses?.[0]?.address2 || "");
+  const primaryAddressValue = watch(
+    "primaryAddress",
+    business?.addresses?.[0]?.address1 || "",
+  );
+  const additionalAddressValue = watch(
+    "additionalAddress",
+    business?.addresses?.[0]?.address2 || "",
+  );
 
   const [socialLinks, setSocialLinks] = useState([
     { contactType: "", url: "", isPrimary: false },
@@ -34,6 +40,13 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [galleryImages, setGalleryImages] = useState([]);
+  const [pendingDeletions, setPendingDeletions] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfig, setDeleteConfig] = useState({
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const { refetchUser } = useAuth();
@@ -51,6 +64,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
     });
 
   const [uploadImage, { loading: uploading }] = useMutation(UPLOAD_IMAGE);
+  const [deleteImage] = useMutation(DELETE_IMAGE);
 
   // Initialize form with existing business data
   useEffect(() => {
@@ -86,7 +100,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
   }, [business]);
 
   // Constants
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
   // Sample data - Replace with complete Oyo State data
@@ -294,7 +308,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
       if (file.size > MAX_FILE_SIZE) {
         setError("businessImage", {
           type: "size",
-          message: "Image size should not exceed 2MB",
+          message: "Image size should not exceed 5MB",
         });
         fileInputRef.current.value = "";
         setSelectedImage(null);
@@ -327,7 +341,20 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
   };
 
   const handleRemoveGalleryImage = (index) => {
-    setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+    const urlToRemove = galleryImages[index];
+    if (!urlToRemove) return;
+
+    setDeleteConfig({
+      title: "Remove Gallery Image?",
+      message:
+        "Are you sure you want to remove this image from the gallery? This action cannot be undone once you save.",
+      onConfirm: () => {
+        setPendingDeletions((prev) => [...prev, urlToRemove]);
+        setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+        setShowDeleteConfirm(false);
+      },
+    });
+    setShowDeleteConfirm(true);
   };
 
   const handleGalleryUpload = async (e) => {
@@ -341,7 +368,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
 
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} is too large. Max size is 2MB.`);
+        toast.error(`${file.name} is too large. Max size is 5MB.`);
         continue;
       }
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -352,8 +379,19 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
       try {
         toast.loading(`Uploading ${file.name}...`, { id: "gallery-upload" });
         const compressedImage = await compressImage(file);
+
+        // Rename file for SEO: business-name-gallery-1.webp
+        const businessSlug = business.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-");
+        const renamedFile = new File(
+          [compressedImage],
+          `${businessSlug}-gallery-${galleryImages.length + 1}.webp`,
+          { type: "image/webp" },
+        );
+
         const { data: uploadData } = await uploadImage({
-          variables: { file: compressedImage },
+          variables: { file: renamedFile },
         });
         toast.success(`Uploaded ${file.name}`, { id: "gallery-upload" });
         if (uploadData?.uploadImage) {
@@ -369,24 +407,62 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
   };
 
   const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
-    fileInputRef.current.value = "";
-    clearErrors("businessImage");
+    if (
+      imagePreview &&
+      typeof imagePreview === "string" &&
+      imagePreview.startsWith("http")
+    ) {
+      setDeleteConfig({
+        title: "Remove Business Logo?",
+        message:
+          "Are you sure you want to remove the business logo? This action cannot be undone once you save.",
+        onConfirm: () => {
+          setPendingDeletions((prev) => [...prev, imagePreview]);
+          setSelectedImage(null);
+          setImagePreview(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          clearErrors("businessImage");
+          setShowDeleteConfirm(false);
+        },
+      });
+      setShowDeleteConfirm(true);
+    } else {
+      setSelectedImage(null);
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      clearErrors("businessImage");
+    }
   };
 
   const onSubmit = async (data) => {
-
     let uploadedImageUrl = null;
 
     if (selectedImage) {
       try {
         toast.loading("Uploading logo...", { id: "img-upload" });
         const compressedImage = await compressImage(selectedImage);
+
+        // Rename file for SEO: business-name-logo.webp
+        const businessSlug = business.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-");
+        const renamedFile = new File(
+          [compressedImage],
+          `${businessSlug}-logo.webp`,
+          { type: "image/webp" },
+        );
+
         const { data: uploadData } = await uploadImage({
-          variables: { file: compressedImage },
+          variables: { file: renamedFile },
         });
         uploadedImageUrl = uploadData.uploadImage;
+
+        // Mark old logo for cleanup after successful update
+        const oldLogo = business?.images?.find((img) => img.isLogo);
+        if (oldLogo?.imageUrl && oldLogo.imageUrl !== uploadedImageUrl) {
+          setPendingDeletions((prev) => [...prev, oldLogo.imageUrl]);
+        }
+
         toast.success("Logo uploaded!", { id: "img-upload" });
       } catch (uploadErr) {
         console.error("Image upload failed:", uploadErr);
@@ -428,6 +504,19 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
           input: formData,
         },
       });
+
+      // Handle pending deletions
+      if (pendingDeletions.length > 0) {
+        toast.loading("Cleaning up old images...", { id: "cleanup" });
+        for (const url of pendingDeletions) {
+          try {
+            await deleteImage({ variables: { url } });
+          } catch (err) {
+            console.error(`Cleanup failed for ${url}:`, err);
+          }
+        }
+        toast.success("Storage cleanup complete", { id: "cleanup" });
+      }
 
       toast.success("Business details updated successfully!");
     } catch (err) {
@@ -474,7 +563,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               required: "Business name is required",
               maxLength: {
                 value: 40,
-                message: "Business name cannot exceed 40 characters"
+                message: "Business name cannot exceed 40 characters",
               },
               validate: (value) => {
                 if (!value) return true;
@@ -506,8 +595,12 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               <p className="text-sm text-red-600">
                 {errors.businessName.message}
               </p>
-            ) : <div />}
-            <p className={`text-xs ${businessNameValue.length >= 40 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            ) : (
+              <div />
+            )}
+            <p
+              className={`text-xs ${businessNameValue.length >= 40 ? "text-red-500 font-bold" : "text-gray-500"}`}
+            >
               {businessNameValue.length}/40
             </p>
           </div>
@@ -532,8 +625,8 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               required: "Headquarters address is required",
               maxLength: {
                 value: 120,
-                message: "Address cannot exceed 120 characters"
-              }
+                message: "Address cannot exceed 120 characters",
+              },
             })}
           />
           <div className="flex justify-between mt-1">
@@ -541,8 +634,12 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               <p className="text-sm text-red-600">
                 {errors.primaryAddress.message}
               </p>
-            ) : <div />}
-            <p className={`text-xs ${primaryAddressValue?.length >= 120 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            ) : (
+              <div />
+            )}
+            <p
+              className={`text-xs ${primaryAddressValue?.length >= 120 ? "text-red-500 font-bold" : "text-gray-500"}`}
+            >
               {primaryAddressValue?.length || 0}/120
             </p>
           </div>
@@ -564,12 +661,14 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
             {...register("additionalAddress", {
               maxLength: {
                 value: 120,
-                message: "Address cannot exceed 120 characters"
-              }
+                message: "Address cannot exceed 120 characters",
+              },
             })}
           />
           <div className="flex justify-end mt-1">
-            <p className={`text-xs ${additionalAddressValue?.length >= 120 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            <p
+              className={`text-xs ${additionalAddressValue?.length >= 120 ? "text-red-500 font-bold" : "text-gray-500"}`}
+            >
               {additionalAddressValue?.length || 0}/120
             </p>
           </div>
@@ -624,8 +723,8 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               required: "Description is required",
               maxLength: {
                 value: 150,
-                message: "Description cannot exceed 150 characters"
-              }
+                message: "Description cannot exceed 150 characters",
+              },
             })}
           />
           <div className="flex justify-between mt-1">
@@ -633,8 +732,12 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               <p className="text-sm text-red-600">
                 {errors.description.message}
               </p>
-            ) : <div />}
-            <p className={`text-xs ${descriptionValue.length >= 150 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            ) : (
+              <div />
+            )}
+            <p
+              className={`text-xs ${descriptionValue.length >= 150 ? "text-red-500 font-bold" : "text-gray-500"}`}
+            >
               {descriptionValue.length}/150
             </p>
           </div>
@@ -747,7 +850,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
               required: "Phone number is required",
               maxLength: {
                 value: 20,
-                message: "Phone number cannot exceed 20 characters"
+                message: "Phone number cannot exceed 20 characters",
               },
               pattern: {
                 value: /^[0-9\+\-\s\(\)]{10,20}$/,
@@ -758,8 +861,12 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
           <div className="flex justify-between mt-1">
             {errors.phone ? (
               <p className="text-sm text-red-600">{errors.phone.message}</p>
-            ) : <div />}
-            <p className={`text-xs ${phoneValue?.length >= 20 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            ) : (
+              <div />
+            )}
+            <p
+              className={`text-xs ${phoneValue?.length >= 20 ? "text-red-500 font-bold" : "text-gray-500"}`}
+            >
               {phoneValue?.length || 0}/20
             </p>
           </div>
@@ -774,7 +881,10 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
             Social Media Links
           </label>
           {socialLinks.map((link, index) => (
-            <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-2 p-4 sm:p-0 bg-gray-50 sm:bg-transparent rounded-xl sm:rounded-none border sm:border-0 border-gray-100">
+            <div
+              key={index}
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-2 p-4 sm:p-0 bg-gray-50 sm:bg-transparent rounded-xl sm:rounded-none border sm:border-0 border-gray-100"
+            >
               <div className="w-full sm:w-48">
                 <select
                   style={{ padding: "10px" }}
@@ -824,7 +934,9 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
                   )}
                 </div>
                 <div className="flex justify-end mt-1">
-                  <p className={`text-[10px] ${link.url?.length >= 250 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                  <p
+                    className={`text-[10px] ${link.url?.length >= 250 ? "text-red-500 font-bold" : "text-gray-400"}`}
+                  >
                     {link.url?.length || 0}/250
                   </p>
                 </div>
@@ -840,7 +952,10 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
                   }
                   name="primarySocial"
                 />
-                <span style={{ marginLeft: "6px" }} className="text-sm font-medium text-gray-700">
+                <span
+                  style={{ marginLeft: "6px" }}
+                  className="text-sm font-medium text-gray-700"
+                >
                   <span className="sm:hidden">Set as primary</span>
                   <span className="hidden sm:inline">Primary</span>
                 </span>
@@ -934,7 +1049,7 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
-                      PNG, JPG, GIF up to 2MB
+                      PNG, JPG, GIF up to 5MB
                     </p>
                   </>
                 )}
@@ -976,6 +1091,132 @@ const UpdateBusiness = ({ business, onClose, onSuccess }) => {
           {updating || uploading ? "Updating..." : "Update Business"}
         </button>
       </form>
+
+      {/* Custom Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "24px",
+              padding: "32px",
+              maxWidth: "400px",
+              width: "100%",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              textAlign: "center",
+              animation: "modalFadeIn 0.3s ease-out",
+            }}
+          >
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                backgroundColor: "#fee2e2",
+                color: "#ef4444",
+                borderRadius: "9999px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </div>
+            <h3
+              style={{
+                fontSize: "20px",
+                fontWeight: "700",
+                color: "#111827",
+                marginBottom: "12px",
+              }}
+            >
+              {deleteConfig.title}
+            </h3>
+            <p
+              style={{
+                fontSize: "15px",
+                color: "#6b7280",
+                lineHeight: "1.5",
+                marginBottom: "24px",
+              }}
+            >
+              {deleteConfig.message}
+            </p>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid #e5e7eb",
+                  backgroundColor: "#fff",
+                  color: "#374151",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteConfig.onConfirm}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "none",
+                  backgroundColor: "#ef4444",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
