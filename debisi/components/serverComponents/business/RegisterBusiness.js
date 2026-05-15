@@ -39,7 +39,7 @@ const RegisterBusiness = ({ onSuccess }) => {
   const [uploadImage] = useMutation(UPLOAD_IMAGE);
 
   // Constants
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
   // Sample data - Replace with complete Oyo State data
@@ -248,9 +248,9 @@ const RegisterBusiness = ({ onSuccess }) => {
       if (file.size > MAX_FILE_SIZE) {
         setError("businessImage", {
           type: "size",
-          message: "Image size should not exceed 2MB",
+          message: "Image size should not exceed 5MB",
         });
-        toast.error("Image size should not exceed 2MB");
+        toast.error("Image size should not exceed 5MB");
         fileInputRef.current.value = "";
         setSelectedImage(null);
         setImagePreview(null);
@@ -296,8 +296,19 @@ const RegisterBusiness = ({ onSuccess }) => {
       try {
         toast.loading("Uploading logo...", { id: "img-upload" });
         const compressedImage = await compressImage(selectedImage);
+
+        // Rename file for SEO: business-name-logo.webp
+        const businessSlug = data.businessName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-");
+        const renamedFile = new File(
+          [compressedImage],
+          `${businessSlug}-logo.webp`,
+          { type: "image/webp" },
+        );
+
         const { data: uploadData } = await uploadImage({
-          variables: { file: compressedImage },
+          variables: { file: renamedFile },
         });
         uploadedImageUrl = uploadData.uploadImage;
         toast.success("Logo uploaded!", { id: "img-upload" });
@@ -858,7 +869,7 @@ const RegisterBusiness = ({ onSuccess }) => {
                       <p className="pl-1"> or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
-                      PNG, JPG, GIF up to 2MB
+                      PNG, JPG, GIF up to 5MB
                     </p>
                   </>
                 )}
