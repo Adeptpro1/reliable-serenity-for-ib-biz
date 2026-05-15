@@ -11,3 +11,8 @@ export const UPLOAD_VIDEO = gql`
     uploadVideo(file: $file)
   }
 `;
+export const DELETE_IMAGE = gql`
+  mutation DeleteImage($url: String!) {
+    deleteImage(url: $url)
+  }
+`;
