@@ -19,17 +19,18 @@ const AboutPage = () => {
 
   // Share Function
   const handleShare = async () => {
-    const name = "Abraham";
-    const shareUrl = "https://www.debisi.ng/";
+    const shareUrl = "https://debisi.ng/";
+    const shareData = {
+      title: "Debisi NG",
+      text: "Discover and connect with local businesses near you in Ibadan and beyond — find services, read reviews, and get in touch. Check out Debisi NG!",
+      url: shareUrl,
+    };
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: "Debisi NG",
-          text: `Hey I'm ${name}, I am using Debisi to drive more customers worldwide, it's great and I'd like you to try it out.`,
-          url: shareUrl,
-        });
+        await navigator.share(shareData);
       } else {
-        alert(`Share this link: ${shareUrl}`);
+        await navigator.clipboard.writeText(shareUrl);
+        alert("Link copied to clipboard!");
       }
     } catch (error) {
       console.error("Error sharing:", error);
