@@ -2,7 +2,7 @@ import Image from "next/image";
 import React, { useState, useRef } from "react";
 import { useMutation } from "@apollo/client";
 import { UPDATE_BUSINESS } from "@/api/mutations/business/business";
-import { UPLOAD_IMAGE } from "@/api/mutations/common";
+import { UPLOAD_IMAGE, DELETE_IMAGE } from "@/api/mutations/common";
 import toast from "react-hot-toast";
 import { FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 import bnwLogo from "@/images/debisi_logo_bnw.png";
@@ -10,14 +10,18 @@ import { compressImage } from "@/utils/imageCompression";
 
 const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
   const [galleryImages, setGalleryImages] = useState(
-    business.images?.filter((img) => !img.isLogo).map((img) => img.imageUrl) || []
+    business.images?.filter((img) => !img.isLogo).map((img) => ({ url: img.imageUrl, file: null })) || []
   );
   const [uploading, setUploading] = useState(false);
+  const [pendingDeletions, setPendingDeletions] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState(null);
   const fileInputRef = useRef(null);
 
   const [uploadImage] = useMutation(UPLOAD_IMAGE);
+  const [deleteImage] = useMutation(DELETE_IMAGE);
   const [updateBusiness, { loading: updating }] = useMutation(UPDATE_BUSINESS, {
-    onCompleted: () => {
+    onCompleted: async () => {
       toast.success("Gallery updated successfully!");
       if (onSuccess) onSuccess();
       onClose();
@@ -28,7 +32,7 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
     },
   });
 
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_FILE_TYPES = [
     "image/jpeg",
     "image/png",
@@ -45,12 +49,11 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
       return;
     }
 
-    setUploading(true);
     const newImages = [...galleryImages];
 
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} is too large. Max size is 2MB.`);
+        toast.error(`${file.name} is too large. Max size is 5MB.`);
         continue;
       }
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -58,40 +61,108 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
         continue;
       }
 
-      try {
-        toast.loading(`Uploading ${file.name}...`, { id: "gallery-upload" });
-        const compressedImage = await compressImage(file);
-        const { data: uploadData } = await uploadImage({
-          variables: { file: compressedImage },
-        });
-        toast.success(`Uploaded ${file.name}`, { id: "gallery-upload" });
-        if (uploadData?.uploadImage) {
-          newImages.push(uploadData.uploadImage);
-        }
-      } catch (err) {
-        toast.error(`Failed to upload ${file.name}`);
-        console.error(err);
-      }
+      // Create a local preview
+      const localUrl = URL.createObjectURL(file);
+      newImages.push({ url: localUrl, file: file });
     }
 
     setGalleryImages(newImages);
-    setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeImage = (index) => {
-    setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = (img) => {
+    setImageToDelete(img);
+    setShowDeleteConfirm(true);
   };
 
-  const handleSave = () => {
-    updateBusiness({
-      variables: {
-        id: business.id,
-        input: {
-          galleryImages: galleryImages,
+  const confirmRemove = () => {
+    if (!imageToDelete) return;
+    
+    if (!imageToDelete.file) {
+      // It's an existing image from DB/Bunny
+      setPendingDeletions((prev) => [...prev, imageToDelete.url]);
+    } else {
+      // It's a newly added image (blob URL)
+      URL.revokeObjectURL(imageToDelete.url);
+    }
+    
+    setGalleryImages((prev) => prev.filter((img) => img.url !== imageToDelete.url));
+    
+    setShowDeleteConfirm(false);
+    setImageToDelete(null);
+  };
+
+  const handleSave = async () => {
+    setUploading(true);
+    try {
+      const finalImageUrls = [];
+      const businessSlug = business.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+
+      // 1. Process all images (upload new ones, keep existing ones)
+      for (let i = 0; i < galleryImages.length; i++) {
+        const img = galleryImages[i];
+        if (img.file) {
+          // It's a new file, upload it
+          try {
+            toast.loading(`Uploading image ${i + 1}...`, { id: "gallery-upload" });
+            const compressedImage = await compressImage(img.file);
+            const renamedFile = new File(
+              [compressedImage],
+              `${businessSlug}-gallery-${Date.now()}-${i + 1}.webp`,
+              { type: "image/webp" }
+            );
+
+            const { data: uploadData } = await uploadImage({
+              variables: { file: renamedFile },
+            });
+            
+            if (uploadData?.uploadImage) {
+              finalImageUrls.push(uploadData.uploadImage);
+              // Revoke local URL
+              URL.revokeObjectURL(img.url);
+            }
+          } catch (err) {
+            console.error("Upload failed for one image:", err);
+            toast.error("Failed to upload some images. Please try again.");
+            setUploading(false);
+            return; // Stop if upload fails
+          }
+        } else {
+          // It's an existing image URL
+          finalImageUrls.push(img.url);
+        }
+      }
+
+      toast.success("All images ready", { id: "gallery-upload" });
+
+      // 2. Update the business in DB with the final list of URLs
+      await updateBusiness({
+        variables: {
+          id: business.id,
+          input: {
+            galleryImages: finalImageUrls,
+          },
         },
-      },
-    });
+      });
+
+      // 3. Cleanup storage for removed images
+      if (pendingDeletions.length > 0) {
+        toast.loading("Cleaning up old storage...", { id: "cleanup" });
+        for (const url of pendingDeletions) {
+          try {
+            await deleteImage({ variables: { url } });
+          } catch (err) {
+            console.error(`Failed to delete ${url} from storage:`, err);
+          }
+        }
+        toast.success("Storage cleanup complete", { id: "cleanup" });
+      }
+    } catch (err) {
+      console.error("Save failed:", err);
+      // Error is handled by mutation onError
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -157,7 +228,7 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
                 margin: 0,
               }}
             >
-              Up to 4 images, max 2MB each
+              Up to 4 images, max 5MB each
             </p>
           </div>
           <button
@@ -190,7 +261,7 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
               gap: "24px",
             }}
           >
-            {galleryImages.map((url, idx) => (
+            {galleryImages.map((img, idx) => (
               <div
                 key={idx}
                 style={{
@@ -203,12 +274,13 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
                 }}
               >
                 <Image
-                  src={url}
+                  src={img.url}
                   alt={`Gallery ${idx + 1}`}
                   style={{
                     width: "100%",
                     height: "100%",
                     objectFit: "cover",
+                    pointerEvents: "none", // Prevent image from stealing hover
                   }}
                   width={800}
                   height={800}
@@ -226,12 +298,16 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
                     justifyContent: "center",
                     opacity: 0,
                     transition: "opacity 0.2s",
+                    cursor: "default",
                   }}
-                  onMouseEnter={(e) => (e.target.style.opacity = 1)}
-                  onMouseLeave={(e) => (e.target.style.opacity = 0)}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = 0)}
                 >
                   <button
-                    onClick={() => removeImage(idx)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeImage(img);
+                    }}
                     style={{
                       padding: "12px",
                       backgroundColor: "#ef4444",
@@ -242,8 +318,12 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
                       boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                       transition: "transform 0.2s",
                     }}
-                    onMouseEnter={(e) => (e.target.style.transform = "scale(1.1)")}
-                    onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.transform = "scale(1.1)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.transform = "scale(1)")
+                    }
                     title="Remove Image"
                   >
                     <FaTrash size={18} />
@@ -407,21 +487,141 @@ const GalleryManagementModal = ({ business, onClose, onSuccess }) => {
             }}
             onMouseEnter={(e) => {
               if (!updating && !uploading) {
-                e.target.style.opacity = 0.9;
                 e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow =
+                  "0 20px 25px -5px rgba(0, 0, 0, 0.1)";
               }
             }}
             onMouseLeave={(e) => {
               if (!updating && !uploading) {
-                e.target.style.opacity = 1;
                 e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
               }
             }}
           >
-            {updating ? "Saving..." : "Save Changes"}
+            {updating ? "Saving..." : uploading ? "Uploading..." : "Save Changes"}
           </button>
         </div>
+
+        {/* Custom Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
+              padding: "20px",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "24px",
+                padding: "32px",
+                maxWidth: "400px",
+                width: "100%",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                textAlign: "center",
+                animation: "modalFadeIn 0.3s ease-out",
+              }}
+            >
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  backgroundColor: "#fee2e2",
+                  color: "#ef4444",
+                  borderRadius: "9999px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 20px",
+                }}
+              >
+                <FaTrash size={28} />
+              </div>
+              <h3
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "700",
+                  color: "#111827",
+                  marginBottom: "12px",
+                }}
+              >
+                Remove Image?
+              </h3>
+              <p
+                style={{
+                  fontSize: "15px",
+                  color: "#6b7280",
+                  lineHeight: "1.5",
+                  marginBottom: "24px",
+                }}
+              >
+                Are you sure you want to remove this image? This action will be finalized once you click <strong>Save Changes</strong>.
+              </p>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setImageToDelete(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "12px",
+                    borderRadius: "12px",
+                    border: "1px solid #e5e7eb",
+                    backgroundColor: "#fff",
+                    color: "#374151",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRemove}
+                  style={{
+                    flex: 1,
+                    padding: "12px",
+                    borderRadius: "12px",
+                    border: "none",
+                    backgroundColor: "#ef4444",
+                    color: "#fff",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      <style jsx>{`
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 };
