@@ -22,7 +22,7 @@ import {
   GET_NOTICE_LEADS,
 } from "@/api/queries/business/notice";
 import { GET_MY_WALLET } from "@/api/queries/user/wallet";
-import { UPLOAD_IMAGE } from "@/api/mutations/common";
+import { UPLOAD_IMAGE, DELETE_IMAGE } from "@/api/mutations/common";
 import { toast } from "react-hot-toast";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -42,6 +42,8 @@ const NoticeForProfile = ({ userData }) => {
   const [createNotice] = useMutation(CREATE_NOTICE);
   const [boostNoticeMutation] = useMutation(BOOST_NOTICE);
   const [deleteNoticeMutation] = useMutation(DELETE_NOTICE);
+  const [deleteImage] = useMutation(DELETE_IMAGE);
+
   const { data: walletData } = useQuery(GET_MY_WALLET);
   const walletBalance = walletData?.myWallet?.balance || 0;
   const BOOST_COST_PER_DAY = 100;
@@ -90,17 +92,32 @@ const NoticeForProfile = ({ userData }) => {
       return;
     }
 
+    const business = userBusinesses.find((b) => b.id === noticeForm.businessId);
+    const businessSlug = business?.name
+      ? business.name.toLowerCase().replace(/[^a-z0-9]/g, "-")
+      : "notice";
+
     setUploading(true);
     try {
       toast.loading("Uploading images...", { id: "notice-upload" });
       const uploadedUrls = await Promise.all(
-        files.map(async (file) => {
-          if (file.size > 2 * 1024 * 1024)
-            throw new Error(`${file.name} exceeds 2MB limit`);
+        files.map(async (file, index) => {
+          if (file.size > 5 * 1024 * 1024)
+            throw new Error(`${file.name} exceeds 5MB limit`);
           const compressedImage = await compressImage(file);
+
+          // Rename file for SEO: business-name-notice-1.webp
+          const renamedFile = new File(
+            [compressedImage],
+            `${businessSlug}-notice-${
+              noticeForm.images.length + index + 1
+            }.webp`,
+            { type: "image/webp" },
+          );
+
           const { data } = await client.mutate({
             mutation: UPLOAD_IMAGE,
-            variables: { file: compressedImage },
+            variables: { file: renamedFile },
           });
           return data.uploadImage;
         }),
@@ -114,6 +131,21 @@ const NoticeForProfile = ({ userData }) => {
       toast.error(err.message || "Upload failed", { id: "notice-upload" });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async (urlToRemove) => {
+    try {
+      toast.loading("Removing image...", { id: "notice-img-del" });
+      await deleteImage({ variables: { url: urlToRemove } });
+      setNoticeForm(prev => ({
+        ...prev,
+        images: prev.images.filter(url => url !== urlToRemove)
+      }));
+      toast.success("Image removed", { id: "notice-img-del" });
+    } catch (err) {
+      console.error("Failed to delete notice image:", err);
+      toast.error("Failed to remove image", { id: "notice-img-del" });
     }
   };
 
@@ -175,16 +207,30 @@ const NoticeForProfile = ({ userData }) => {
     }
   };
 
-  const handleDeleteNotice = async (id) => {
+  const handleDeleteNotice = async (notice) => {
     if (!confirm("Are you sure you want to delete this notice?")) return;
     try {
+      // Cleanup images from Bunny.net storage
+      if (notice.images && notice.images.length > 0) {
+        for (const url of notice.images) {
+          try {
+            await deleteImage({ variables: { url } });
+          } catch (err) {
+            console.error("Failed to delete notice image:", url, err);
+          }
+        }
+      }
+
       await deleteNoticeMutation({
-        variables: { id },
+        variables: { id: notice.id },
         refetchQueries: [{ query: GET_CURRENT_USER }],
       });
       toast.success("Notice deleted");
     } catch (err) {
-      if (err.message.includes("network-request-failed") || err.message.includes("Failed to fetch")) {
+      if (
+        err.message.includes("network-request-failed") ||
+        err.message.includes("Failed to fetch")
+      ) {
         toast.error("Network Error: Please check your connection");
       } else {
         toast.error(err.message);
@@ -358,7 +404,7 @@ const NoticeForProfile = ({ userData }) => {
             <NoticeAdminCard
               key={notice.id}
               notice={notice}
-              onDelete={() => handleDeleteNotice(notice.id)}
+              onDelete={() => handleDeleteNotice(notice)}
               onViewLeads={() => {
                 setSelectedNotice(notice);
                 setShowLeadsModal(true);
@@ -505,7 +551,6 @@ const NoticeForProfile = ({ userData }) => {
                 required
               />
             </div>
-
             <div
               style={{
                 display: "grid",
@@ -573,6 +618,32 @@ const NoticeForProfile = ({ userData }) => {
                   }}
                   placeholder="https://..."
                 />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "10px", fontWeight: "700", color: "#999", marginBottom: "8px", textTransform: "uppercase" }}>
+                Notice Images (Max 2)
+              </label>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                {noticeForm.images.map((url, idx) => (
+                  <div key={idx} style={{ position: "relative", width: "80px", height: "80px", borderRadius: "12px", overflow: "hidden", border: "1px solid #eee" }}>
+                    <Image src={url} alt="Notice preview" fill style={{ objectFit: "cover" }} />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(url)}
+                      style={{ position: "absolute", top: "4px", right: "4px", backgroundColor: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", display: "flex", alignItems: "center", justifyCenter: "center", fontSize: "12px" }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {noticeForm.images.length < 2 && (
+                  <label style={{ width: "80px", height: "80px", border: "2px dashed #eee", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#aaa" }}>
+                    <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                    <FiImage size={20} />
+                  </label>
+                )}
               </div>
             </div>
 
