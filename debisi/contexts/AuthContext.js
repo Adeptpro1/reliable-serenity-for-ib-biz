@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useQuery, useApolloClient } from '@apollo/client';
-import { GET_CURRENT_USER } from '../api/queries/user/user';
+import { GET_CURRENT_USER } from '../graphql/queries/user/user';
 import { auth } from '../config/firebase';
 import { onIdTokenChanged, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import toast from 'react-hot-toast';
