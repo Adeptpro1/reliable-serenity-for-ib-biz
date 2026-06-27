@@ -7,7 +7,7 @@ export async function fetchGraphQL(query, variables = {}, options = {}) {
     : query?.loc?.source?.body;
 
   if (!queryString) {
-    console.error("fetchGraphQL: Invalid query provided.", query);
+    console.warn("fetchGraphQL: Invalid query provided.", query);
     return { data: null, error: "Invalid query provided" };
   }
 
@@ -28,19 +28,19 @@ export async function fetchGraphQL(query, variables = {}, options = {}) {
     });
 
     if (!res.ok) {
-      console.error(`GraphQL fetch failed with status: ${res.status}`);
+      console.warn(`GraphQL fetch failed with status: ${res.status}`);
       return { data: null, error: `HTTP error! status: ${res.status}` };
     }
 
     const json = await res.json();
     if (json.errors) {
-      console.error("GraphQL errors:", JSON.stringify(json.errors, null, 2));
+      console.warn("GraphQL errors:", JSON.stringify(json.errors, null, 2));
       return { data: null, errors: json.errors };
     }
 
     return { data: json.data, errors: null };
   } catch (err) {
-    console.error("Server-side GraphQL fetch error:", err);
+    console.warn("Server-side GraphQL fetch error:", err);
     // Return null data so the build doesn't crash if backend is down during CI/CD
     return { data: null, error: err.message };
   }
