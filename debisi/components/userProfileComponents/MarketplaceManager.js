@@ -788,23 +788,27 @@ const MarketplaceManager = ({ userData }) => {
             ) : products.length === 0 ? (
               <div className="text-center" style={{ padding: "32px 0" }}>
                 <p className="text-gray-600">
-                  No products found. Add your first product to get started!
+                  {selectedBusiness?.isVerified 
+                    ? "No products found. Add your first product to get started!" 
+                    : "No products found."}
                 </p>
-                <button
-                  onClick={() => {
-                    setEditingProduct(null);
-                    resetForm();
-                    setShowProductForm(true);
-                  }}
-                  className="text-white rounded hover:bg-blue-700"
-                  style={{
-                    padding: "8px 16px",
-                    background:
-                      "linear-gradient(90deg, purple 0%, #d22730 100%)",
-                  }}
-                >
-                  Add Product
-                </button>
+                {selectedBusiness?.isVerified && (
+                  <button
+                    onClick={() => {
+                      setEditingProduct(null);
+                      resetForm();
+                      setShowProductForm(true);
+                    }}
+                    className="text-white rounded hover:bg-blue-700"
+                    style={{
+                      padding: "8px 16px",
+                      background:
+                        "linear-gradient(90deg, purple 0%, #d22730 100%)",
+                    }}
+                  >
+                    Add Product
+                  </button>
+                )}
               </div>
             ) : (
               <div>
