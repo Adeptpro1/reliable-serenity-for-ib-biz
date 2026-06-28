@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 import BusinessCard from "../serverComponents/business/BusinessCard";
 import NoticeCard from "../serverComponents/business/NoticeCard";
 import VideoCard from "../serverComponents/business/VideoCard";
@@ -12,35 +13,45 @@ import { GET_BUSINESS_VIDEOS } from "@/graphql/queries/business/videos";
 import { GET_BUSINESS_NOTICES } from "@/graphql/queries/business/notice";
 
 // ─── Geolocation Hook ────────────────────────────────────────────────────────
-// Requests browser location permission on mount. If granted, reads the
-// town/city/lg the user previously stored (set by the directory page's
-// location picker) from localStorage and uses it for proximity-aware re-fetching.
+// Reads the town/city/lg from user profile if logged in, or from localStorage
+// (set by the directory page's location picker).
+// Does not prompt browser location permission since coordinates are not used.
 function useGeolocation() {
+  const { user } = useAuth();
   const [userLocation, setUserLocation] = useState(null);
-  const [locationStatus, setLocationStatus] = useState("idle"); // idle | requesting | granted | denied
+  const [locationStatus, setLocationStatus] = useState("idle");
 
   useEffect(() => {
-    if (!navigator?.geolocation) return;
-    setLocationStatus("requesting");
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        // The platform uses town/city/lg (not lat/lng) for proximity.
-        // We read the value the user previously set via the directory location picker.
-        const storedLocation = (() => {
-          try {
-            const raw = localStorage.getItem("userLocation");
-            return raw ? JSON.parse(raw) : null;
-          } catch {
-            return null;
-          }
-        })();
-        setUserLocation(storedLocation);
-        setLocationStatus("granted");
-      },
-      () => setLocationStatus("denied"),
-      { timeout: 6000 }
-    );
-  }, []);
+    // 1. If user is logged in and has location in profile, use it
+    if (user && (user.town || user.city || user.lg)) {
+      const profileLocation = {
+        town: user.town?.name || user.town || undefined,
+        city: user.city?.name || user.city || undefined,
+        lg: user.lg?.name || user.lg || undefined,
+      };
+      setUserLocation(profileLocation);
+      setLocationStatus("granted");
+      return;
+    }
+
+    // 2. Otherwise, check localStorage for a previously set location
+    const storedLocation = (() => {
+      try {
+        const raw = localStorage.getItem("userLocation");
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    if (storedLocation) {
+      setUserLocation(storedLocation);
+      setLocationStatus("granted");
+    } else {
+      setUserLocation(null);
+      setLocationStatus("denied");
+    }
+  }, [user]);
 
   return { userLocation, locationStatus };
 }
