@@ -118,6 +118,17 @@ export default function TabNavigation({
     return null;
   }, [selectedLocation, user]);
 
+  // Sync the derived userLocation to localStorage so that the homepage useGeolocation hook can read it
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (userLocation) {
+        localStorage.setItem("userLocation", JSON.stringify(userLocation));
+      } else {
+        localStorage.removeItem("userLocation");
+      }
+    }
+  }, [userLocation]);
+  
   const bizVariables = {
     pagination: { skip: bizSkip, take: PAGE_SIZE },
     userLocation,
