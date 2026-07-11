@@ -487,6 +487,12 @@ const MarketplaceManager = ({ userData }) => {
       return;
     }
 
+    // Validate maximum of 3 images
+    if (productForm.images.length > 3) {
+      toast.error("You can only upload a maximum of 3 images for a product");
+      return;
+    }
+
     // Ensure at least one primary image
     if (!productForm.images.some((img) => img.isPrimary)) {
       toast.error("Please set a primary image");
@@ -1470,8 +1476,18 @@ const MarketplaceManager = ({ userData }) => {
                         isPrimary: false,
                       }));
                       setProductForm((prev) => {
-                        const updatedImages = [...prev.images, ...newImages];
-                        if (!prev.images.some((img) => img.isPrimary) && newImages.length > 0) {
+                        const allowedCount = 3 - prev.images.length;
+                        if (allowedCount <= 0) {
+                          toast.error("You can only upload a maximum of 3 images for a product.");
+                          return prev;
+                        }
+                        let finalNewImages = newImages;
+                        if (newImages.length > allowedCount) {
+                          toast.error("You can only upload a maximum of 3 images. Extra files were ignored.");
+                          finalNewImages = newImages.slice(0, allowedCount);
+                        }
+                        const updatedImages = [...prev.images, ...finalNewImages];
+                        if (!prev.images.some((img) => img.isPrimary) && finalNewImages.length > 0) {
                           updatedImages[0].isPrimary = true;
                         }
                         return { ...prev, images: updatedImages };
