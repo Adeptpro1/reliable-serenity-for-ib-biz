@@ -12,7 +12,7 @@ import DynamicHeader from "@/components/layoutComponents/DynamicHeader";
 import { useRouter } from "next/navigation";
 import Modal from "../../components/otherComponents/Modal";
 import { toast } from "react-hot-toast";
-import { FaFlag } from "react-icons/fa";
+import { FaFlag, FaShareAlt } from "react-icons/fa";
 
 const ProductCategory = {
   ELECTRONICS: "ELECTRONICS",
@@ -514,18 +514,42 @@ function MarketplaceClient({ initialProducts = [] }) {
     location: "",
   });
 
+    const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters((prev) => ({
+        ...prev,
+        search: filters.search,
+        location: filters.location,
+        minPrice: filters.minPrice,
+        maxPrice: filters.maxPrice,
+      }));
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [filters.search, filters.location, filters.minPrice, filters.maxPrice]);
+
+  useEffect(() => {
+    setDebouncedFilters((prev) => ({
+      ...prev,
+      category: filters.category,
+      isMadeInOyo: filters.isMadeInOyo,
+    }));
+  }, [filters.category, filters.isMadeInOyo]);
+  
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
-      category: filters.category || undefined,
-      isMadeInOyo: filters.isMadeInOyo || undefined,
-      search: filters.search || undefined,
-      minPrice: filters.minPrice ? parseFloat(filters.minPrice) : undefined,
-      maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : undefined,
-      location: filters.location || undefined,
+      category: debouncedFilters.category || undefined,
+      isMadeInOyo: debouncedFilters.isMadeInOyo || undefined,
+      search: debouncedFilters.search || undefined,
+      minPrice: debouncedFilters.minPrice ? parseFloat(debouncedFilters.minPrice) : undefined,
+      maxPrice: debouncedFilters.maxPrice ? parseFloat(debouncedFilters.maxPrice) : undefined,
+      location: debouncedFilters.location || undefined,
     },
     skip: false,
   });
@@ -584,6 +608,36 @@ function MarketplaceClient({ initialProducts = [] }) {
     }).format(price);
   };
 
+    const handleShareProduct = async (product, e) => {
+    if (e) e.stopPropagation();
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://debisi.ng";
+    const shareUrl = `${origin}/marketplace?highlight=${product.id}&biz=${product.business?.slug || ""}`;
+    const shareText = `Check out "${product.title}" from ${product.business?.name || "our store"} on Debisi Commercial Platform!`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.title,
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success("Shared successfully!");
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          copyToClipboard(shareUrl);
+        }
+      }
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+      .then(() => toast.success("Link copied to clipboard!"))
+      .catch(() => toast.error("Failed to copy link."));
+  };
+  
   const getPrimaryImage = (images) => {
     const primary = images?.find((img) => img.isPrimary);
     return (
@@ -644,7 +698,8 @@ function MarketplaceClient({ initialProducts = [] }) {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  const isInitialLoad = loading && !allProducts?.length;
+  if (isInitialLoad) return <LoadingSpinner />;
 
   return (
     <>
@@ -978,6 +1033,8 @@ function MarketplaceClient({ initialProducts = [] }) {
               ? "repeat(2, 1fr)"
               : "repeat(auto-fill, minmax(300px, 1fr))",
             gap: isMobile ? "15px" : "25px",
+            opacity: loading ? 0.6 : 1,
+            transition: "opacity 0.2s ease",
           }}
         >
           {allProducts?.map((product) => (
@@ -1152,15 +1209,40 @@ function MarketplaceClient({ initialProducts = [] }) {
                 )}
               </div>
 
-              {/* Flag button moved below 'Made in Oyo' */}
-              {!userBusinesses?.some((b) => b.id === product.business?.id) && (
-                <div
+          {/* Share & Flag Actions */}
+              <div
+                style={{
+                  marginTop: "8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "0 8px 8px",
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareProduct(product, e);
+                  }}
+                  title="Share Product"
+                  aria-label="Share Product"
                   style={{
-                    marginTop: "8px",
-                    display: "flex",
-                    justifyContent: "flex-end",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--primaryColor)",
+                    cursor: "pointer",
+                    fontSize: "10px",
+                    padding: "8px",
                   }}
                 >
+                  <FaShareAlt />
+                  <span>Share</span>
+                </button>
+
+                {!userBusinesses?.some((b) => b.id === product.business?.id) && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1171,7 +1253,7 @@ function MarketplaceClient({ initialProducts = [] }) {
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "8px",
+                      gap: "6px",
                       background: "transparent",
                       border: "none",
                       color: "#e11d48",
@@ -1183,8 +1265,8 @@ function MarketplaceClient({ initialProducts = [] }) {
                     <FaFlag />
                     <span>Flag Product</span>
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -1496,18 +1578,23 @@ function MarketplaceClient({ initialProducts = [] }) {
                       </div>
                     )}
                   </div>
-                  {/* Contact Seller Section */}
-                  {(() => {
-                    const contactInfo = getContactDetails(selectedProduct, formatPrice);
-                    if (!contactInfo.url) return null;
-                    return (
+                  
+                    {/* Contact & Share Section */}
                       <div
                         style={{
                           borderTop: "1px solid #eee",
                           paddingTop: "15px",
                           marginTop: "15px",
+                          display: "flex",
+                      flexDirection: "column",
+                      gap: "15px",
                         }}
                       >
+                        {(() => {
+                      const contactInfo = getContactDetails(selectedProduct, formatPrice);
+                      if (!contactInfo.url) return null;
+                      return (
+                        <div>
                         <h4
                           style={{
                             fontSize: "1.1rem",
@@ -1549,6 +1636,39 @@ function MarketplaceClient({ initialProducts = [] }) {
                       </div>
                     );
                   })()}
+                    <div>
+                      <h4
+                        style={{
+                          fontSize: "1.1rem",
+                          fontWeight: "600",
+                          margin: "0 0 10px",
+                        }}
+                      >
+                        Share Product
+                      </h4>
+                      <button
+                        style={{
+                          padding: "10px 20px",
+                          background: "#6c757d",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          transition: "background 0.2s",
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                        onClick={(e) => handleShareProduct(selectedProduct, e)}
+                      >
+                        <FaShareAlt />
+                        <span>Share Product Link</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
