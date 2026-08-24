@@ -10,6 +10,7 @@ export const GET_ADMIN_BUSINESSES = gql`
       slug
       isVerified
       user {
+        id
         firstName
         lastName
         email
