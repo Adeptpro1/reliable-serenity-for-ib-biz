@@ -25,12 +25,14 @@ export const GET_ADMIN_ALL_TRANSACTIONS = gql`
       createdAt
       wallet {
         user {
+          id
           firstName
           lastName
           email
         }
       }
       business {
+        id
         name
       }
     }
