@@ -159,6 +159,7 @@ const UsersForAdmin = () => {
         <Table 
           data={flatUsers} 
           columns={columns} 
+          pageSize={20}
           onDelete={handleDelete} 
           onEdit={handleEdit}
           isLoading={loading || deleting || updating} 
