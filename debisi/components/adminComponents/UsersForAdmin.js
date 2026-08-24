@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { FiUsers, FiBriefcase } from "react-icons/fi";
 import Table from "../otherComponents/Tables";
@@ -33,18 +33,6 @@ const UsersForAdmin = () => {
     },
     fetchPolicy: "network-only",
   });
-
-  // Sync data to filtered state safely after mount
-  useEffect(() => {
-    if (data?.adminUsersPaginated) {
-      const flattened = data.adminUsersPaginated.map((u) => ({
-        ...u,
-        name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
-        businessesList: u.businesses?.map((b) => b.name).join(", ") || "",
-      }));
-      setFilteredUsers(flattened);
-    }
-  }, [data]);
 
   const [deleteUser, { loading: deleting }] = useMutation(ADMIN_DELETE_USER);
   const [updateUser, { loading: updating }] = useMutation(ADMIN_UPDATE_USER);
