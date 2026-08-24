@@ -72,7 +72,6 @@ export const REGISTER_USER = gql`
     $email: String!
     $firebaseUid: String!
     $phone: String
-    $role: UserRole
     $dob: String
     $gender: Gender
     $lg: Lg
@@ -87,7 +86,6 @@ export const REGISTER_USER = gql`
       email: $email
       firebaseUid: $firebaseUid
       phone: $phone
-      role: $role
       dob: $dob
       gender: $gender
       lg: $lg
