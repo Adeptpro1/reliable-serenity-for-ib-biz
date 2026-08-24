@@ -120,6 +120,11 @@ const Tables = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+    // Reset internal table page to 1 whenever new data arrives
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data]);
+
   // Update position on scroll or resize
   useEffect(() => {
     if (menuOpen) {
