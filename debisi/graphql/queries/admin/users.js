@@ -12,6 +12,7 @@ export const GET_ADMIN_USERS = gql`
       isEmailVerified
       createdAt
       businesses {
+        id
         name
       }
     }
