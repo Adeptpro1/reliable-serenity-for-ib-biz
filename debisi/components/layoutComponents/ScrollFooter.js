@@ -15,9 +15,10 @@ function ScrollFooter() {
 
   const navigationItems = [
     { href: "/about", icon: <BsInfoCircle />, label: "About Us" },
-    // { href: "/ad", icon: <BsMegaphone />, label: "Advertise" },
+    { href: "/ad", icon: <BsMegaphone />, label: "Advertise" },
     { href: dashboardLink, icon: <BsPerson />, label: "My Profile" },
     { href: "/blog", icon: <BsJournalText />, label: "Our Blog" },
+    { href: "/privacy", icon: <BsJournalText />, label: "Privacy Policy" },
   ];
 
   const socialItems = [
