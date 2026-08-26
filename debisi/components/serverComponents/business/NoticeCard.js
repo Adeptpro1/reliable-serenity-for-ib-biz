@@ -52,6 +52,18 @@ const NoticeCard = ({
     }
   }, [id, currentUser]);
 
+  useEffect(() => {
+    const key = currentUser ? `liked_notices_${currentUser.id}` : "liked_notices_guest";
+    try {
+      const likedNotices = JSON.parse(localStorage.getItem(key) || "[]");
+      if (likedNotices.includes(id)) {
+        setLiked(true);
+      } else {
+        setLiked(false);
+      }
+    } catch {}
+  }, [id, currentUser]);
+
   const [submitLead, { loading: isSubmitting }] =
     useMutation(SUBMIT_NOTICE_LEAD);
   const [trackActivity] = useMutation(TRACK_ACTIVITY);
@@ -94,6 +106,16 @@ const NoticeCard = ({
       });
       setLiked(true);
       setLikesCount((prev) => prev + 1);
+
+      const key = currentUser ? `liked_notices_${currentUser.id}` : "liked_notices_guest";
+      try {
+        const likedNotices = JSON.parse(localStorage.getItem(key) || "[]");
+        if (!likedNotices.includes(id)) {
+          likedNotices.push(id);
+          localStorage.setItem(key, JSON.stringify(likedNotices));
+        }
+      } catch {}
+
       toast.success("Liked notice!");
     } catch (err) {
       toast.error(err.message || "Failed to like notice");
