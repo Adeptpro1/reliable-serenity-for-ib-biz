@@ -403,14 +403,13 @@ function BusinessVerification({ userData }) {
                   const status = getBusinessVerificationStatus(business);
                   const isPending = status === "PENDING";
                   const isVerified = status === "VERIFIED";
-                  const isDisabled = isPending || isVerified;
 
                   let labelSuffix = "";
                   if (isVerified) labelSuffix = " (Already Verified)";
                   else if (isPending) labelSuffix = " (Pending Verification)";
 
                   return (
-                    <option key={business.id} value={business.id} disabled={isDisabled}>
+                    <option key={business.id} value={business.id}>
                       {business.name}{labelSuffix}
                     </option>
                   );
