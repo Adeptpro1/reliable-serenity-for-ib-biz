@@ -813,13 +813,15 @@ const VideosForProfile = ({ userData }) => {
             >
               <button
                 onClick={() => setShowCreateVideoModal(false)}
+                disabled={isUploading}
                 style={{
                   padding: "10px 20px",
                   border: "1px solid #d1d5db",
                   borderRadius: "6px",
                   backgroundColor: "white",
                   color: "#374151",
-                  cursor: "pointer",
+                  cursor: isUploading ? "not-allowed" : "pointer",
+                  opacity: isUploading ? 0.5 : 1,
                   fontSize: "14px",
                 }}
               >
@@ -968,7 +970,8 @@ const VideosForProfile = ({ userData }) => {
                   borderRadius: "6px",
                   backgroundColor: "white",
                   color: "#374151",
-                  cursor: "pointer",
+                  cursor: relistingLoading ? "not-allowed" : "pointer",
+                  opacity: relistingLoading ? 0.5 : 1,
                   fontSize: "14px",
                 }}
               >
