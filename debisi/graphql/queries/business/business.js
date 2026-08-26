@@ -69,8 +69,8 @@ export const GET_BUSINESS_ANALYTICS = gql`
 `;
 
 export const GET_BUSINESSES_PAGINATED = gql`
-  query GetBusinessesPaginated($pagination: PaginationInput, $userLocation: LocationInput, $search: String, $category: BusinessCategory) {
-    businessesPaginated(pagination: $pagination, userLocation: $userLocation, search: $search, category: $category) {
+  query GetBusinessesPaginated($pagination: PaginationInput, $userLocation: LocationInput, $search: String, $category: BusinessCategory, $isVerified: Boolean, $isMadeInOyo: Boolean) {
+    businessesPaginated(pagination: $pagination, userLocation: $userLocation, search: $search, category: $category, isVerified: $isVerified, isMadeInOyo: $isMadeInOyo) {
       id
       name
       description
