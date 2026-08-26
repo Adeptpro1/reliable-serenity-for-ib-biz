@@ -66,23 +66,60 @@ export default function PolicyModal({ isOpen, onClose }) {
           </h3>
 
           <div style={{ marginBottom: '24px' }}>
-            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>1. Data Collection</h4>
-            <p>We collect names, emails, business details, usage data, and location info to provide and improve our services in compliance with the <strong>NDPA 2023</strong>.</p>
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>1. Introduction</h4>
+            <p>
+              Welcome to Debisi (referred to as &quot;Debisi&quot;, &quot;Debisi NG&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). Debisi is operated by <strong>iSalesNG Emporium</strong>. We are committed to protecting your privacy and ensuring a transparent user experience on our web platform (https://debisi.ng/) and our mobile applications. This policy explains how we collect, use, process, and disclose your information.
+            </p>
 
-            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>2. Data Usage</h4>
-            <p>Your data helps us verify listings, process payments, and communicate updates. We process data based on consent and contractual necessity.</p>
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>2. Information We Collect</h4>
+            <p>To provide our directory services, we collect information directly from you:</p>
+            <ul style={{ listStyleType: 'disc', paddingLeft: '20px', marginTop: '8px' }}>
+              <li><strong>Account &amp; Profile Info:</strong> Name, email, phone number, and credentials managed securely through Firebase Authentication.</li>
+              <li><strong>Business Listing Details:</strong> Business name, categories, descriptions, contact info (phone, WhatsApp, social links), location details (address, LGA), and logos/photos.</li>
+              <li><strong>Device Permissions &amp; Media:</strong> On mobile devices, we request permissions to access your camera and photo library. These permissions are used exclusively to let you select and upload business logos or product photos.</li>
+              <li><strong>Automatically Collected Data:</strong> Usage data, device type, operating system, and IP address to analyze platform performance.</li>
+            </ul>
 
-            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>3. Data Sharing & Security</h4>
-            <p>We do not sell your data. Sharing is limited to trusted partners (e.g., payment processors). We use industry-standard measures to protect your info. When you follow a business, they do not have access to your email or phone directly, but can ask Debisi to send a marketing promotion or notice to you as a follower.</p>
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>3. How We Use Your Information</h4>
+            <p>We use the collected information to:</p>
+            <ul style={{ listStyleType: 'disc', paddingLeft: '20px', marginTop: '8px' }}>
+              <li>Publish and display your business in our public directory.</li>
+              <li>Verify your account and process listing uploads.</li>
+              <li>Allow potential buyers to connect directly with you via WhatsApp, calls, or website links.</li>
+              <li>Suggest nearby businesses based on your location.</li>
+              <li>Protect our community from fraud and maintain security.</li>
+            </ul>
 
-            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>4. Your Rights</h4>
-            <p>You have the right to access, correct, or delete your data, and withdraw consent at any time. We retain data only as long as legally necessary.</p>
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>4. Account &amp; Data Deletion</h4>
+            <p>
+              We respect your control over your data. Under NDPA 2023 regulations and Google Play policies, you can request the deletion of your account and all associated business data at any time.
+            </p>
+            <p style={{ marginTop: '8px' }}>
+              To request complete deletion, send an email to <strong>isalesng@gmail.com</strong> with the subject <strong>&quot;Account Deletion Request&quot;</strong>. Specify the email associated with your account. Once verified, we will permanently delete your account, listings, and uploaded media within 7 business days.
+            </p>
 
-            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>5. Cookies & Links</h4>
-            <p>We use cookies to improve experience. We are not responsible for the privacy practices of third-party links found on the platform.</p>
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>5. Data Storage and Sharing</h4>
+            <p>
+              We do not sell, rent, or trade your personal data. Sharing is limited to trusted service providers who assist in operating our platform, such as <strong>Firebase Authentication</strong> (for secure login) and <strong>Bunny.net</strong> (for CDN media hosting), or when legally required by Nigerian regulations.
+            </p>
 
-            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>6. Contact</h4>
-            <p>For data-related requests or questions, please contact us through the platform support channels.</p>
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>6. Security of Your Data</h4>
+            <p>
+              We implement technical and organizational security measures to protect your information. However, no transmission method over the internet or mobile networks is 100% secure, and we cannot guarantee absolute data security.
+            </p>
+
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>7. Changes to This Privacy Policy</h4>
+            <p>
+              We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy in this modal and updating the policy version.
+            </p>
+
+            <h4 style={{ fontWeight: '700', marginTop: '16px' }}>8. Contact Us</h4>
+            <p>If you have any questions about this Privacy Policy or data deletion requests, contact us:</p>
+            <ul style={{ listStyleType: 'disc', paddingLeft: '20px', marginTop: '8px' }}>
+              <li><strong>Operator:</strong> iSalesNG Emporium</li>
+              <li><strong>Email:</strong> isalesng@gmail.com</li>
+              <li><strong>Address:</strong> 43, Sango - Mokola Road, Beside LYF Foods Building, Coca Cola, Mokola - Ibadan, Oyo State, Nigeria.</li>
+            </ul>
           </div>
 
           <p style={{ marginTop: '20px', fontWeight: '600', textAlign: 'center', color: '#4b5563' }}>
