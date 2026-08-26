@@ -31,8 +31,8 @@ const GET_ALL_NOTIFICATIONS = gql`
 `;
 
 const BROADCAST_NOTIFICATION = gql`
-  mutation BroadcastNotification($title: String!, $content: String!, $type: String, $userId: ID) {
-    broadcastNotification(title: $title, content: $content, type: $type, userId: $userId)
+  mutation BroadcastNotification($title: String!, $content: String!, $type: String, $userId: ID, $sendPush: Boolean) {
+    broadcastNotification(title: $title, content: $content, type: $type, userId: $userId, sendPush: $sendPush)
   }
 `;
 
@@ -56,7 +56,7 @@ const GET_USERS_LIST = gql`
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const NotificationsForAdmin = () => {
-  const [form, setForm] = useState({ title: "", content: "", type: "ALL", userId: "" });
+  const [form, setForm] = useState({ title: "", content: "", type: "ALL", userId: "", sendPush: false });
   const [page, setPage] = useState(0);
   const [readFilter, setReadFilter] = useState("ALL"); // ALL, UNREAD, READ
   const [filteredNotifications, setFilteredNotifications] = useState([]);
@@ -82,7 +82,7 @@ const NotificationsForAdmin = () => {
   const [broadcastNotification, { loading: broadcasting }] = useMutation(BROADCAST_NOTIFICATION, {
     onCompleted: () => {
       toast.success("Notification sent!");
-      setForm({ title: "", content: "", type: "ALL", userId: "" });
+      setForm({ title: "", content: "", type: "ALL", userId: "", sendPush: false });
       refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -115,6 +115,7 @@ const NotificationsForAdmin = () => {
         content: form.content,
         type: form.type === "SPECIFIC" ? null : form.type,
         userId: form.type === "SPECIFIC" ? form.userId : null,
+        sendPush: form.sendPush,
       },
     });
   };
@@ -292,6 +293,18 @@ const NotificationsForAdmin = () => {
               className="block w-full border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-all"
               style={{ padding: "10px 14px", minHeight: "100px", resize: "vertical" }}
             />
+          </div>
+          <div className="flex items-center" style={{ gap: "8px" }}>
+            <input
+              type="checkbox"
+              id="sendPush"
+              checked={form.sendPush}
+              onChange={(e) => setForm({ ...form, sendPush: e.target.checked })}
+              className="w-4 h-4 text-blue-600 border-gray-200 rounded focus:ring-blue-500 cursor-pointer"
+            />
+            <label htmlFor="sendPush" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
+              Send as Push Notification (routes users to notifications screen)
+            </label>
           </div>
           <div className="flex justify-end">
             <button
