@@ -54,6 +54,9 @@ function Footer() {
                   <Link href="/ad">
                     <li className="mb-2">Advertise with us</li>
                   </Link>
+                    <Link href="/privacy">
+                      <li className="mb-2">Privacy Policy</li>
+                    </Link>
                 </ul>
               </div>
             </div>
