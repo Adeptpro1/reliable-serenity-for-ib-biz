@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.adepttechnologies.debising",
+      "sha256_cert_fingerprints": [
+        "60:24:2A:B1:ED:78:5D:F5:C9:07:4E:93:C2:AA:0A:31:49:13:E8:1B:9C:E7:3B:D5:4D:28:E9:B3:AA:A9:C2:03"
+      ]
+    }
+  }
+]
