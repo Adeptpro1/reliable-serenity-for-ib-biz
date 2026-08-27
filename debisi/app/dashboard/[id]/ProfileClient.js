@@ -7,18 +7,15 @@ import {
   FaBriefcase,
   FaVideo,
   FaClipboardList,
-  FaTrash,
   FaSignOutAlt,
   FaBell,
   FaBars,
   FaTimes,
-  FaCheck,
   FaStore,
-  FaRocket,
   FaHeart,
-  FaCalendar,
   FaWallet,
   FaAddressBook,
+  FaIdCard,
   FaStar,
 } from "react-icons/fa";
 import { TbHome } from "react-icons/tb";
@@ -70,8 +67,8 @@ const menuItems = [
   { id: "leads", label: "Leads & Contacts", icon: <FaAddressBook /> },
   { id: "following", label: "Following", icon: <FaHeart /> },
   { id: "wallet", label: "Wallet & Billing", icon: <FaWallet /> },
-  // { id: "botw", label: "Biz of the Week", icon: <FaStar /> },
-  { id: "verification", label: "Verification", icon: <FaBell /> },
+  { id: "botw", label: "Biz of the Week", icon: <FaStar /> },
+  { id: "verification", label: "Verification", icon: <FaIdCard /> },
   { id: "notifications", label: "Notifications", icon: <FaBell /> },
 ];
 
