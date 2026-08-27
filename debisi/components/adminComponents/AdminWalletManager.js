@@ -55,6 +55,7 @@ const AdminWalletManager = () => {
         Purpose: (tx.purpose || "").replace(/_/g, " "),
         Business: tx.business?.name || "N/A",
         Amount: tx.amount,
+        Status: tx.status || "N/A",
         Date: tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A"
       })));
 
@@ -66,6 +67,7 @@ const AdminWalletManager = () => {
         { wch: 22 }, // Purpose
         { wch: 25 }, // Business
         { wch: 14 }, // Amount
+        { wch: 14 }, // Status
         { wch: 20 }, // Date
       ];
 
@@ -89,11 +91,12 @@ const AdminWalletManager = () => {
       tx.type,
       tx.purpose.replace(/_/g, " "),
       `N${tx.amount.toLocaleString()}`,
+      tx.status,
       new Date(tx.createdAt).toLocaleDateString()
     ]);
 
     doc.autoTable({
-      head: [['User', 'Type', 'Purpose', 'Amount', 'Date']],
+      head: [['User', 'Type', 'Purpose', 'Amount', 'Status', 'Date']],
       body: tableData,
       startY: 25
     });
@@ -226,6 +229,7 @@ const AdminWalletManager = () => {
                 <th className="text-[10px] font-black text-slate-400 uppercase tracking-widest" style={{ padding: "16px 32px" }}>Type</th>
                 <th className="text-[10px] font-black text-slate-400 uppercase tracking-widest" style={{ padding: "16px 32px" }}>Purpose / Context</th>
                 <th className="text-[10px] font-black text-slate-400 uppercase tracking-widest" style={{ padding: "16px 32px" }}>Amount</th>
+                <th className="text-[10px] font-black text-slate-400 uppercase tracking-widest" style={{ padding: "16px 32px" }}>Status</th>
                 <th className="text-[10px] font-black text-slate-400 uppercase tracking-widest" style={{ padding: "16px 32px" }}>Date</th>
               </tr>
             </thead>
@@ -264,6 +268,17 @@ const AdminWalletManager = () => {
                   <td style={{ padding: "20px 32px" }}>
                     <span className={`font-black text-base ${tx.type === "FUNDING" ? "text-emerald-600" : "text-slate-700"}`}>
                       ₦{tx.amount.toLocaleString()}
+                    </span>
+                  </td>
+                  <td style={{ padding: "20px 32px" }}>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      tx.status === "SUCCESS"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : tx.status === "PENDING"
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : "bg-rose-50 text-rose-700 border border-rose-200"
+                    }`}>
+                      {tx.status}
                     </span>
                   </td>
                   <td style={{ padding: "20px 32px" }}>
