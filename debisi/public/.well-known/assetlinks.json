@@ -7,7 +7,10 @@
       "namespace": "android_app",
       "package_name": "com.adepttechnologies.debising",
       "sha256_cert_fingerprints": [
-        "60:24:2A:B1:ED:78:5D:F5:C9:07:4E:93:C2:AA:0A:31:49:13:E8:1B:9C:E7:3B:D5:4D:28:E9:B3:AA:A9:C2:03"
+        "60:24:2A:B1:ED:78:5D:F5:C9:07:4E:93:C2:AA:0A:31:49:13:E8:1B:9C:E7:3B:D5:4D:28:E9:B3:AA:A9:C2:03",
+        "58:D6:CA:EA:1C:96:60:71:B5:8F:14:FF:A4:2C:30:1A:BB:79:94:A9:A7:1D:84:D1:0C:16:02:9D:76:28:4D:EB",
+        "6E:AB:85:E8:6A:49:58:C7:6E:C5:3A:FF:81:35:63:24:79:43:2D:3C:BB:83:75:EB:F9:BE:E2:2D:29:98:F2:3F",
+        "E3:99:8E:5C:57:98:47:DD:1B:C4:63:3F:A4:AB:D9:FC:FB:1F:37:44:C9:29:4A:6F:3E:E6:1A:AF:63:22:AB:C3"
       ]
     }
   }
