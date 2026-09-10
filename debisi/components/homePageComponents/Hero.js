@@ -118,8 +118,63 @@ const HeroSearch = () => {
             {analyzing ? "Thinking..." : <><FaMagic /> AI Search</>}
           </button>
         </form>
+
+        {/* App Download Buttons */}
+        <div
+          className="flex flex-wrap items-center justify-center gap-3"
+          style={{ marginTop: "28px" }}
+        >
+          {/* Google Play */}
+          <a
+            href="https://play.google.com/store/apps/details?id=com.adepttechnologies.debising"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-black hover:bg-gray-900 text-white rounded-xl px-5 py-3 shadow-lg transition-all hover:scale-105 active:scale-95"
+            style={{ border: "1px solid #333" }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
+              className="w-6 h-6 flex-shrink-0"
+              fill="currentColor"
+            >
+              <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l232.6-232.6L47 0zm414 218.7l-55.1-31.7-60.1 60.1 60.1 60.1 55.8-32.1c15.9-9.1 15.9-33.1-.7-56.4zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z" />
+            </svg>
+            <div className="flex flex-col leading-tight text-left">
+              <span className="text-xs text-gray-400">Get it on</span>
+              <span className="text-sm font-semibold">Google Play</span>
+            </div>
+          </a>
+
+          {/* iOS — Coming Soon */}
+          <div
+            className="flex items-center gap-2 rounded-xl px-5 py-3 cursor-not-allowed select-none"
+            style={{
+              border: "1px solid #4B5563",
+              background: "rgba(255,255,255,0.04)",
+              color: "#9CA3AF",
+            }}
+            title="iOS app coming soon"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 384 512"
+              className="w-6 h-6 flex-shrink-0"
+              fill="currentColor"
+            >
+              <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-16.9 75.8-16.9 31.8 0 48.3 16.9 75.8 16.9 48.4-.7 93.1-83.7 105.5-120.5-67.5-32-101-93.3-64-91.7zm-89-221.2c27.2-32.2 24.1-61.7 23.2-72.1-23.1 1.4-50 15.7-65.2 33.2-16.7 18.9-26.1 42.4-24.1 68.5 25 1.9 47.7-11.9 66.1-29.6z" />
+            </svg>
+            <div className="flex flex-col leading-tight text-left">
+              <span className="text-xs" style={{ color: "#6B7280" }}>
+                Coming soon on
+              </span>
+              <span className="text-sm font-semibold">App Store</span>
+            </div>
+          </div>
+        </div>
       </div>
     </HeroSpotlight>
+
   );
 };
 
