@@ -18,12 +18,24 @@ import { toast } from "react-hot-toast";
 
 const getBunnyThumbnailUrl = (videoUrl) => {
   if (!videoUrl) return "/images/video-placeholder.jpg";
-  const match = videoUrl.match(/embed\/(\d+)\/([a-zA-Z0-9-]+)/);
-  if (match) {
-    const [_, libraryId, videoId] = match;
-    return `https://vz-${libraryId}.b-cdn.net/${videoId}/thumbnail.jpg`;
+  if (
+    videoUrl.includes("/thumbnail.jpg") ||
+    videoUrl.endsWith(".jpg") ||
+    videoUrl.endsWith(".png") ||
+    videoUrl.endsWith(".webp")
+  ) {
+    return videoUrl;
   }
-  return videoUrl;
+  if (videoUrl.includes("/playlist.m3u8")) {
+    return videoUrl.replace("/playlist.m3u8", "/thumbnail.jpg");
+  }
+  const guidMatch = videoUrl.match(
+    /([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/,
+  );
+  if (guidMatch) {
+    return `https://vz-255a1212-2db.b-cdn.net/${guidMatch[1]}/thumbnail.jpg`;
+  }
+  return "/images/video-placeholder.jpg";
 };
 
 const VideosForProfile = ({ userData }) => {
@@ -84,6 +96,18 @@ const VideosForProfile = ({ userData }) => {
   const boost14Rate = dbPricings.find((p) => p.category === "SHOWROOM" && p.title.includes("14 Days"))?.amount ?? 3500;
 
   const videos = data?.businessVideosByBusiness || [];
+
+  const hasActiveFreeVideo = useMemo(() => {
+    return videos.some(
+      (v) => v.isFreeUpload && !v.deleted && new Date(v.expiresAt) > new Date() && (v.views || 0) < 50
+    );
+  }, [videos]);
+
+  const hasOtherActiveFreeVideo = useMemo(() => {
+    return videos.some(
+      (v) => v.id !== relistingVideo?.id && v.isFreeUpload && !v.deleted && new Date(v.expiresAt) > new Date() && (v.views || 0) < 50
+    );
+  }, [videos, relistingVideo]);
 
   // Mutations
   const [uploadVideoFile] = useMutation(UPLOAD_VIDEO);
@@ -168,18 +192,24 @@ const VideosForProfile = ({ userData }) => {
     }
 
     // Wallet balance validation
-    let cost = videoListingFee;
-    if (isBoosted) {
-      if (!selectedBusiness?.isVerified) {
-        toast.error("Video boosting is only available for verified businesses");
+    const isFree = !!selectedBusiness?.isVerified && !isBoosted && !hasActiveFreeVideo;
+    let cost = 0;
+
+    if (!isFree) {
+      if (!isBoosted) {
+        cost = videoListingFee;
+      } else {
+        if (!selectedBusiness?.isVerified) {
+          toast.error("Video boosting is only available for verified businesses");
+          return;
+        }
+        cost = boostDays === 3 ? boost3Rate : boostDays === 7 ? boost7Rate : boost14Rate;
+      }
+
+      if (walletBalance < cost) {
+        toast.error(`Insufficient wallet balance. Cost is ₦${cost.toLocaleString()} but your balance is ₦${walletBalance.toLocaleString()}`);
         return;
       }
-      cost = boostDays === 3 ? boost3Rate : boostDays === 7 ? boost7Rate : boost14Rate;
-    }
-
-    if (walletBalance < cost) {
-      toast.error(`Insufficient wallet balance. Cost is ₦${cost.toLocaleString()} but your balance is ₦${walletBalance.toLocaleString()}`);
-      return;
     }
 
     setIsUploading(true);
@@ -212,7 +242,13 @@ const VideosForProfile = ({ userData }) => {
         },
       });
 
-      toast.success("Video uploaded successfully!");
+      if (isFree) {
+        toast.success("⚡ Free Showroom video uploaded! Bunny Stream is encoding in HD (ready to stream in ~1-2 mins).");
+      } else if (isBoosted) {
+        toast.success("🚀 Boosted Showroom video uploaded! Bunny Stream is encoding in HD (ready to stream in ~1-2 mins).");
+      } else {
+        toast.success("🎬 Showroom video uploaded! (₦300 deducted, HD encoding takes ~1-2 mins)");
+      }
       setShowCreateVideoModal(false);
       setVideoTitle("");
       setVideoDescription("");
@@ -238,19 +274,25 @@ const VideosForProfile = ({ userData }) => {
     if (!relistingVideo) return;
 
     // Determine cost
-    let cost = videoListingFee;
-    if (relistBoosted) {
-      if (!selectedBusiness?.isVerified) {
-        toast.error("Video boosting is only available for verified businesses");
+    const isFreeRelist = !!selectedBusiness?.isVerified && !relistBoosted && !hasOtherActiveFreeVideo;
+    let cost = 0;
+
+    if (!isFreeRelist) {
+      if (!relistBoosted) {
+        cost = videoListingFee;
+      } else {
+        if (!selectedBusiness?.isVerified) {
+          toast.error("Video boosting is only available for verified businesses");
+          return;
+        }
+        cost = relistBoostDays === 3 ? boost3Rate : relistBoostDays === 7 ? boost7Rate : boost14Rate;
+      }
+
+      if (walletBalance < cost) {
+        toast.error(`Insufficient wallet balance. Cost is ₦${cost.toLocaleString()} but your balance is ₦${walletBalance.toLocaleString()}`);
         return;
       }
-      cost = relistBoostDays === 3 ? boost3Rate : relistBoostDays === 7 ? boost7Rate : boost14Rate;
     }
-
-    if (walletBalance < cost) {
-      toast.error(`Insufficient wallet balance. Cost is ₦${cost.toLocaleString()} but your balance is ₦${walletBalance.toLocaleString()}`);
-      return;
-    };
 
     setRelistingLoading(true);
     try {
@@ -268,7 +310,13 @@ const VideosForProfile = ({ userData }) => {
         },
       });
 
-      toast.success("Video relisted successfully");
+      if (isFreeRelist) {
+        toast.success("⚡ Video relisted for free! Views reset to 0.");
+      } else if (relistBoosted) {
+        toast.success("🚀 Boosted video relisted successfully!");
+      } else {
+        toast.success("🎬 Video relisted! (₦300 deducted, lasts 3 days)");
+      }
       setShowRelistModal(false);
       setRelistingVideo(null);
       setRelistBoosted(false);
@@ -311,7 +359,14 @@ const VideosForProfile = ({ userData }) => {
         <div style={{ display: "flex", gap: "10px" }}>
           {userBusinesses.length > 0 && (
             <button
-              onClick={() => setShowCreateVideoModal(true)}
+              onClick={() => {
+                setShowCreateVideoModal(true);
+                if (selectedBusiness?.isVerified && hasActiveFreeVideo) {
+                  toast("ℹ️ Free slot in use: Active free video running. This upload costs ₦300.", {
+                    icon: "ℹ️",
+                  });
+                }
+              }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -540,6 +595,12 @@ const VideosForProfile = ({ userData }) => {
                       </span>
                     )}
 
+                    {video.isFreeUpload && (
+                      <span style={{ fontSize: "11px", backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 6px", borderRadius: "4px", fontWeight: "600" }}>
+                        ⚡ Free ({video.views || 0}/50 views)
+                      </span>
+                    )}
+
                     {video.boosted && (
                       <span style={{ fontSize: "11px", backgroundColor: "#f3e8ff", color: "#6b21a8", padding: "2px 6px", borderRadius: "4px", fontWeight: "600" }}>
                         ⚡ {video.boostTier || "Boosted"}
@@ -555,6 +616,12 @@ const VideosForProfile = ({ userData }) => {
                         setRelistBoosted(false);
                         setRelistBoostDays(3);
                         setShowRelistModal(true);
+                        const otherFree = videos.some((v) => v.id !== video.id && v.isFreeUpload && !v.deleted && new Date(v.expiresAt) > new Date() && (v.views || 0) < 50);
+                        if (selectedBusiness?.isVerified && otherFree) {
+                          toast("ℹ️ Free slot in use: Another free video is running. Relisting costs ₦300.", {
+                            icon: "ℹ️",
+                          });
+                        }
                       }}
                       style={{
                         display: "flex",
@@ -791,6 +858,26 @@ const VideosForProfile = ({ userData }) => {
                   </div>
                 </div>
               </div>
+            ) : selectedBusiness?.isVerified ? (
+              hasActiveFreeVideo ? (
+                <div style={{ padding: "12px", backgroundColor: "#fef3c7", borderRadius: "8px", border: "1px solid #fde68a", textAlign: "center" }}>
+                  <p style={{ fontSize: "13px", color: "#92400e", margin: 0, fontWeight: "600" }}>
+                    ℹ️ Free Tier Slot in Use
+                  </p>
+                  <p style={{ fontSize: "11px", color: "#b45309", margin: "4px 0 0 0" }}>
+                    You currently have an active free showroom video running. This additional upload costs standard ₦{videoListingFee.toLocaleString()} (lasts 3 days) until your free video expires or is deleted.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ padding: "12px", backgroundColor: "#ecfdf5", borderRadius: "8px", border: "1px solid #a7f3d0", textAlign: "center" }}>
+                  <p style={{ fontSize: "13px", color: "#065f46", margin: 0, fontWeight: "600" }}>
+                    🆓 Free Showroom Loop for Verified Businesses!
+                  </p>
+                  <p style={{ fontSize: "11px", color: "#047857", margin: "4px 0 0 0" }}>
+                    Your video will be live for 24 hours or up to 50 views at ₦0 cost. Toggle Boost above to reach city/state audiences longer.
+                  </p>
+                </div>
+              )
             ) : (
               <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", textAlign: "center" }}>
                 Standard upload costs ₦{videoListingFee.toLocaleString()} and will last for 3 days before expiration.
@@ -799,7 +886,13 @@ const VideosForProfile = ({ userData }) => {
 
             {/* Wallet Cost Info */}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "10px", backgroundColor: "#f3f4f6", borderRadius: "6px", fontSize: "12px" }}>
-              <span>Expected Cost: <strong style={{ color: "#7c3aed" }}>₦{(isBoosted ? (boostDays === 3 ? boost3Rate : boostDays === 7 ? boost7Rate : boost14Rate) : videoListingFee).toLocaleString()}</strong></span>
+              <span>Expected Cost: <strong style={{ color: "#7c3aed" }}>
+                {isBoosted 
+                  ? `₦${(boostDays === 3 ? boost3Rate : boostDays === 7 ? boost7Rate : boost14Rate).toLocaleString()}` 
+                  : selectedBusiness?.isVerified && !hasActiveFreeVideo
+                    ? "FREE (₦0)" 
+                    : `₦${videoListingFee.toLocaleString()}`}
+              </strong></span>
               <span>Wallet Balance: <strong style={{ color: "#10b981" }}>₦{walletBalance.toLocaleString()}</strong></span>
             </div>
 
@@ -941,6 +1034,26 @@ const VideosForProfile = ({ userData }) => {
                   </div>
                 </div>
               </div>
+            ) : selectedBusiness?.isVerified ? (
+              hasOtherActiveFreeVideo ? (
+                <div style={{ padding: "12px", backgroundColor: "#fef3c7", borderRadius: "8px", border: "1px solid #fde68a", textAlign: "center" }}>
+                  <p style={{ fontSize: "13px", color: "#92400e", margin: 0, fontWeight: "600" }}>
+                    ℹ️ Free Tier Slot in Use
+                  </p>
+                  <p style={{ fontSize: "11px", color: "#b45309", margin: "4px 0 0 0" }}>
+                    Another free showroom video is currently active. Relisting this video costs standard ₦{videoListingFee.toLocaleString()} (lasts 3 days).
+                  </p>
+                </div>
+              ) : (
+                <div style={{ padding: "12px", backgroundColor: "#ecfdf5", borderRadius: "8px", border: "1px solid #a7f3d0", textAlign: "center" }}>
+                  <p style={{ fontSize: "13px", color: "#065f46", margin: 0, fontWeight: "600" }}>
+                    🆓 Free Relist for Verified Businesses!
+                  </p>
+                  <p style={{ fontSize: "11px", color: "#047857", margin: "4px 0 0 0" }}>
+                    Your relisted video will be live for 24 hours or up to 50 views at ₦0 cost.
+                  </p>
+                </div>
+              )
             ) : (
               <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", textAlign: "center" }}>
                 Relisting without boost costs ₦{videoListingFee.toLocaleString()} and will last for 3 days before expiration.
@@ -949,7 +1062,13 @@ const VideosForProfile = ({ userData }) => {
 
             {/* Wallet Cost Info */}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "10px", backgroundColor: "#f3f4f6", borderRadius: "6px", fontSize: "12px" }}>
-              <span>Expected Cost: <strong style={{ color: "#7c3aed" }}>₦{(relistBoosted ? (relistBoostDays === 3 ? boost3Rate : relistBoostDays === 7 ? boost7Rate : boost14Rate) : videoListingFee).toLocaleString()}</strong></span>
+              <span>Expected Cost: <strong style={{ color: "#7c3aed" }}>
+                {relistBoosted 
+                  ? `₦${(relistBoostDays === 3 ? boost3Rate : relistBoostDays === 7 ? boost7Rate : boost14Rate).toLocaleString()}` 
+                  : selectedBusiness?.isVerified && !hasOtherActiveFreeVideo
+                    ? "FREE (₦0)" 
+                    : `₦${videoListingFee.toLocaleString()}`}
+              </strong></span>
               <span>Wallet Balance: <strong style={{ color: "#10b981" }}>₦{walletBalance.toLocaleString()}</strong></span>
             </div>
 
