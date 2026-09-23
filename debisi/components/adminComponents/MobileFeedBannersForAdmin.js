@@ -92,7 +92,7 @@ const MobileFeedBannersForAdmin = () => {
           endDate: new Date(dates.endDate).toISOString(),
         },
       });
-      toast.success("Mobile feed banner approved and email sent!");
+      toast.success("Feed banner approved and email sent!");
       setIsApproveOpen(false);
       refetch();
     } catch (err) {
@@ -105,7 +105,7 @@ const MobileFeedBannersForAdmin = () => {
     if (reason !== null) {
       try {
         await rejectBanner({ variables: { id, reason } });
-        toast.success("Mobile feed banner rejected");
+        toast.success("Feed banner rejected");
         refetch();
       } catch (err) {
         toast.error(err.message);
@@ -190,8 +190,8 @@ const MobileFeedBannersForAdmin = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between" style={{ gap: "16px", marginBottom: "24px" }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Mobile Feed Banners</h1>
-          <p className="text-sm text-gray-500">Review, schedule, and approve mobile application homepage banners.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Feed Banners (Web & App)</h1>
+          <p className="text-sm text-gray-500">Review, schedule, and approve in-feed sponsored ads across Web and Mobile app feeds.</p>
         </div>
       </div>
 
