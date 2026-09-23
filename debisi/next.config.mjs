@@ -13,6 +13,17 @@ const nextConfig = {
         ],
       },
       {
+        // R9: iOS Universal Links — AASA file must be served as application/json
+        // even though it has no file extension
+        source: '/.well-known/apple-app-site-association',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/json',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {
