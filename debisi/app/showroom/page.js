@@ -405,7 +405,7 @@ export default function ShowroomWebPlaceholder() {
             </div>
             <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-200">
               <span className="text-emerald-400 font-bold">₦0</span>
-              <span>1 Free Upload for Verified Businesses</span>
+              <span>Free Upload for Verified Businesses</span>
             </div>
           </div>
 
