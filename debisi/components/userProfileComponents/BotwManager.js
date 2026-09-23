@@ -17,8 +17,8 @@ import toast from "react-hot-toast";
 // ─── Eligibility reason messages ─────────────────────────────────────────────
 const REASON_MESSAGES = {
   NOT_VERIFIED: "Your business must be verified to apply for Business of the Week.",
-  PROFILE_INCOMPLETE: "Complete your profile first — add a logo, address, description, and a contact link.",
-  NOT_ACTIVE: "Your business needs recent activity (posts, visits, uploads) in the last 7 days.",
+  PROFILE_INCOMPLETE: "Complete your profile first — add an image, registered address, description, and contact info.",
+  NOT_ACTIVE: "Your business account must be in active standing to apply.",
   SPOTS_FULL: "All 8 spots are filled for this week. Check back next Friday!",
   ALREADY_APPLIED: "You have already applied for this week. Check back next Friday.",
 };
