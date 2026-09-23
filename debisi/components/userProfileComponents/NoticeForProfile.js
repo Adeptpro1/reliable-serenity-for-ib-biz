@@ -112,14 +112,15 @@ const NoticeForProfile = ({ userData }) => {
   }, [userBusinesses]);
 
   useEffect(() => {
-    if (noticeForm.boostDays === 0) {
+    const biz = userBusinesses.find((b) => b.id === noticeForm.businessId);
+    if (noticeForm.boostDays === 0 && !biz?.isVerified) {
       setNoticeForm((prev) => ({
         ...prev,
         images: [],
         leadFields: ["name", "email"],
       }));
     }
-  }, [noticeForm.boostDays]);
+  }, [noticeForm.boostDays, noticeForm.businessId, userBusinesses]);
 
   const allNotices = userBusinesses
     .flatMap((biz) =>
@@ -139,13 +140,14 @@ const NoticeForProfile = ({ userData }) => {
   });
 
   const handleImageUpload = async (e) => {
+    const business = userBusinesses.find((b) => b.id === noticeForm.businessId);
+    const maxImages = business?.isVerified ? 4 : 2;
     const files = Array.from(e.target.files);
-    if (files.length + noticeForm.images.length > 2) {
-      toast.error("Max 2 images allowed");
+    if (files.length + noticeForm.images.length > maxImages) {
+      toast.error(`Max ${maxImages} images allowed`);
       return;
     }
 
-    const business = userBusinesses.find((b) => b.id === noticeForm.businessId);
     const businessSlug = business?.name
       ? business.name.toLowerCase().replace(/[^a-z0-9]/g, "-")
       : "notice";
@@ -672,131 +674,157 @@ const NoticeForProfile = ({ userData }) => {
             </div>
 
 
-            {noticeForm.boostDays > 0 ? (
-              <>
-                {/* Notice Images */}
-                <div>
-                  <label style={{ display: "block", fontSize: "10px", fontWeight: "700", color: "#999", marginBottom: "8px", textTransform: "uppercase" }}>
-                    Notice Images (Max 2)
-                  </label>
-                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                    {noticeForm.images.map((imgObj, idx) => (
-                      <div key={idx} style={{ position: "relative", width: "80px", height: "80px", borderRadius: "12px", overflow: "hidden", border: "1px solid #eee" }}>
-                        <Image src={imgObj.url} alt="Notice preview" fill style={{ objectFit: "cover" }} />
-                        {idx === 0 && (
-                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(128,0,128,0.8)", color: "white", fontSize: "9px", textAlign: "center", padding: "2px 0", fontWeight: "bold" }}>
-                            COVER
-                          </div>
-                        )}
-                        {idx > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newImages = [...noticeForm.images];
-                              const temp = newImages[0];
-                              newImages[0] = newImages[idx];
-                              newImages[idx] = temp;
-                              setNoticeForm({ ...noticeForm, images: newImages });
-                            }}
-                            style={{ position: "absolute", bottom: "4px", left: "4px", background: "rgba(0,0,0,0.6)", color: "white", fontSize: "9px", padding: "2px 4px", borderRadius: "4px", border: "none", cursor: "pointer", fontWeight: "bold" }}
-                          >
-                            Set Cover
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(imgObj)}
-                          style={{ position: "absolute", top: "4px", right: "4px", backgroundColor: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    {noticeForm.images.length < 2 && (
-                      <label style={{ width: "80px", height: "80px", border: "2px dashed #eee", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#aaa" }}>
-                        <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
-                        <FiImage size={20} />
-                      </label>
-                    )}
-                  </div>
-                </div>
+            {(() => {
+              const currentBiz = userBusinesses.find((b) => b.id === noticeForm.businessId);
+              const isVerifiedBiz = !!currentBiz?.isVerified;
+              const canUploadImages = isVerifiedBiz || noticeForm.boostDays > 0;
+              const maxImages = isVerifiedBiz ? 4 : 2;
 
-                {/* Lead Collection Fields */}
-                <div
-                  style={{
-                    padding: "15px",
-                    borderRadius: "15px",
-                    backgroundColor: "rgba(128, 0, 128, 0.03)",
-                    border: "1px solid rgba(128, 0, 128, 0.1)",
-                  }}
-                >
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "10px",
-                      fontWeight: "800",
-                      color: "purple",
-                      marginBottom: "4px",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Lead Collection Fields
-                  </label>
-                  <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 12px 0", fontStyle: "italic" }}>
-                    * Either Email or Phone is allowed per notice, but not both.
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
-                    {["name", "email", "phone", "message"].map((field) => (
+              return (
+                <>
+                  {canUploadImages ? (
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <label style={{ fontSize: "10px", fontWeight: "700", color: "#999", textTransform: "uppercase" }}>
+                          Notice Images (Max {maxImages})
+                        </label>
+                        {isVerifiedBiz && (
+                          <span style={{ fontSize: "11px", color: "#059669", fontWeight: "600" }}>
+                            ✅ Verified free tier (up to 4 images)
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                        {noticeForm.images.map((imgObj, idx) => (
+                          <div key={idx} style={{ position: "relative", width: "80px", height: "80px", borderRadius: "12px", overflow: "hidden", border: "1px solid #eee" }}>
+                            <Image src={imgObj.url} alt="Notice preview" fill style={{ objectFit: "cover" }} />
+                            {idx === 0 && (
+                              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(128,0,128,0.8)", color: "white", fontSize: "9px", textAlign: "center", padding: "2px 0", fontWeight: "bold" }}>
+                                COVER
+                              </div>
+                            )}
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newImages = [...noticeForm.images];
+                                  const temp = newImages[0];
+                                  newImages[0] = newImages[idx];
+                                  newImages[idx] = temp;
+                                  setNoticeForm({ ...noticeForm, images: newImages });
+                                }}
+                                style={{ position: "absolute", bottom: "4px", left: "4px", background: "rgba(0,0,0,0.6)", color: "white", fontSize: "9px", padding: "2px 4px", borderRadius: "4px", border: "none", cursor: "pointer", fontWeight: "bold" }}
+                              >
+                                Set Cover
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(imgObj)}
+                              style={{ position: "absolute", top: "4px", right: "4px", backgroundColor: "rgba(255,0,0,0.8)", color: "white", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        {noticeForm.images.length < maxImages && (
+                          <label style={{ width: "80px", height: "80px", border: "2px dashed #eee", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#aaa" }}>
+                            <input type="file" multiple accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                            <FiImage size={20} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: "12px 15px",
+                        borderRadius: "12px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px dashed #cbd5e1",
+                      }}
+                    >
+                      <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>
+                        📷 <strong>Image uploads</strong> are free for verified businesses or unlocked when boosting a notice.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Lead Collection Fields */}
+                  {noticeForm.boostDays > 0 ? (
+                    <div
+                      style={{
+                        padding: "15px",
+                        borderRadius: "15px",
+                        backgroundColor: "rgba(128, 0, 128, 0.03)",
+                        border: "1px solid rgba(128, 0, 128, 0.1)",
+                      }}
+                    >
                       <label
-                        key={field}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          color: "#444",
+                          display: "block",
+                          fontSize: "10px",
+                          fontWeight: "800",
+                          color: "purple",
+                          marginBottom: "4px",
+                          textTransform: "uppercase",
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={noticeForm.leadFields.includes(field)}
-                          disabled={
-                            field === "name" ||
-                            (field === "email" && noticeForm.leadFields.includes("phone")) ||
-                            (field === "phone" && noticeForm.leadFields.includes("email"))
-                          }
-                          onChange={() => {
-                            const newFields = noticeForm.leadFields.includes(field)
-                              ? noticeForm.leadFields.filter((f) => f !== field)
-                              : [...noticeForm.leadFields, field];
-                            setNoticeForm({ ...noticeForm, leadFields: newFields });
-                          }}
-                        />
-                        <span style={{ textTransform: "capitalize" }}>{field}</span>
+                        Lead Collection Fields
                       </label>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div
-                style={{
-                  padding: "15px",
-                  borderRadius: "15px",
-                  backgroundColor: "#f8fafc",
-                  border: "1px dashed #cbd5e1",
-                  textAlign: "center",
-                }}
-              >
-                <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>
-                  💡 <strong>Notice images and lead collection forms</strong> are premium features available only for <strong>boosted notices</strong>.
-                </p>
-                <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px", marginBottom: 0 }}>
-                  Set your initial boost duration below to unlock them.
-                </p>
-              </div>
-            )}
+                      <p style={{ fontSize: "10px", color: "#64748b", margin: "0 0 12px 0", fontStyle: "italic" }}>
+                        * Either Email or Phone is allowed per notice, but not both.
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+                        {["name", "email", "phone", "message"].map((field) => (
+                          <label
+                            key={field}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              cursor: "pointer",
+                              fontSize: "13px",
+                              color: "#444",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={noticeForm.leadFields.includes(field)}
+                              disabled={
+                                field === "name" ||
+                                (field === "email" && noticeForm.leadFields.includes("phone")) ||
+                                (field === "phone" && noticeForm.leadFields.includes("email"))
+                              }
+                              onChange={() => {
+                                const newFields = noticeForm.leadFields.includes(field)
+                                  ? noticeForm.leadFields.filter((f) => f !== field)
+                                  : [...noticeForm.leadFields, field];
+                                setNoticeForm({ ...noticeForm, leadFields: newFields });
+                              }}
+                            />
+                            <span style={{ textTransform: "capitalize" }}>{field}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: "12px 15px",
+                        borderRadius: "12px",
+                        backgroundColor: "rgba(128, 0, 128, 0.02)",
+                        border: "1px dashed rgba(128, 0, 128, 0.15)",
+                      }}
+                    >
+                      <p style={{ fontSize: "12px", color: "#6b21a8", margin: 0 }}>
+                        👥 <strong>Lead Collection Forms</strong>: Boost this notice below to collect customer inquiries (names, emails, phones) directly from readers.
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {(() => {
               const selectedBizForForm = userBusinesses.find((b) => b.id === noticeForm.businessId);
