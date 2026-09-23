@@ -24,7 +24,6 @@ const PricingForAdmin      = lazy(() => import("@/components/adminComponents/Pri
 const AdminSettings        = lazy(() => import("@/components/adminComponents/AdminSettings"));
 const BlogSettings         = lazy(() => import("@/components/adminComponents/BlogSettings"));
 const SponsorSetting       = lazy(() => import("@/components/adminComponents/SponsorSetting"));
-const WebBanner            = lazy(() => import("@/components/adminComponents/WebBanner"));
 const MobileFeedBannersForAdmin = lazy(() => import("@/components/adminComponents/MobileFeedBannersForAdmin"));
 
 const AdminWalletManager   = dynamic(() => import("@/components/adminComponents/AdminWalletManager"), { ssr: false });
@@ -85,8 +84,7 @@ const menuGroups = [
       { id: "ad", label: "Ad", icon: <FaAd /> },
       { id: "reachOut", label: "Reach Out", icon: <FaBullhorn /> },
       { id: "sponsors", label: "Sponsors", icon: <FaBullhorn /> },
-      { id: "webBanner", label: "Banner", icon: <FaAd /> },
-      { id: "mobileFeedBanner", label: "Mobile Feed Banner", icon: <FaAd /> },
+      { id: "mobileFeedBanner", label: "Feed Banners (Web & App)", icon: <FaAd /> },
       { id: "botw", label: "BOTW", icon: <FaStar /> },
     ],
   },
@@ -138,7 +136,6 @@ const AdminPageContent = ({ userData }) => {
       case "topHeader":      return <AdminSettings />;
       case "blogSettings":   return <BlogSettings />;
       case "sponsorSetting": return <SponsorSetting />;
-      case "webBanner":      return <WebBanner />;
       case "mobileFeedBanner": return <MobileFeedBannersForAdmin />;
       case "botw":           return <BotwForAdmin />;
       case "products":       return <ProductsForAdmin />;
