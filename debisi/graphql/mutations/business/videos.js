@@ -12,6 +12,8 @@ export const UPLOAD_BUSINESS_VIDEO = gql`
       boosted
       boostTier
       boostExpiresAt
+      isFreeUpload
+      views
       createdAt
     }
   }
@@ -35,6 +37,8 @@ export const RELIST_BUSINESS_VIDEO = gql`
       boosted
       boostTier
       boostExpiresAt
+      isFreeUpload
+      views
     }
   }
 `;
