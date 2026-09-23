@@ -6,6 +6,7 @@ import { REGISTER_BUSINESS_WITH_DETAILS } from "@/graphql/queries/business/busin
 import { UPLOAD_IMAGE } from "@/graphql/mutations/common";
 import toast from "react-hot-toast";
 import { formatList, formatLabel } from "@/utils/formatters";
+import { TOWNS } from "@/utils/locations";
 import bnwLogo from "@/images/debisi_logo_bnw.png";
 import { compressImage } from "@/utils/imageCompression";
 
@@ -42,80 +43,9 @@ const RegisterBusiness = ({ onSuccess }) => {
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/gif"];
 
-  // Sample data - Replace with complete Oyo State data
+  // Oyo State location data
   const oyoStateData = {
-    towns: [
-      "Adegbayi",
-      "Adeoyo",
-      "Agbowo",
-      "Agodi",
-      "Ago_Are",
-      "Akanran",
-      "Akinyele",
-      "Ajibode",
-      "Akobo",
-      "Alakia",
-      "Alalubosa",
-      "Apata",
-      "Apete",
-      "Apatere",
-      "Apomu",
-      "Awe",
-      "Bashorun",
-      "Beere",
-      "Bodija",
-      "Challenge",
-      "Dugbe",
-      "Egbeda",
-      "Eleyele",
-      "Eruwa",
-      "Felele",
-      "Fiditi",
-      "Foko",
-      "Idi_Ayunre",
-      "Idere",
-      "Igbo_Ora",
-      "Igboho",
-      "Igbeti",
-      "Ilero",
-      "Ilora",
-      "Jobele",
-      "Jericho",
-      "Kisi",
-      "Labiran",
-      "Lalupon",
-      "Lanlate",
-      "Mokola",
-      "Monatan",
-      "Moniya",
-      "Oja_ba",
-      "Oje",
-      "Ojoo",
-      "OkeAdo",
-      "OkeBola",
-      "OkeOffa",
-      "OkePadi",
-      "Okeho",
-      "Olanla",
-      "Ologuneru",
-      "Olodo",
-      "Olorunda",
-      "Olorunsogo",
-      "Olojuoro",
-      "Oluyole",
-      "Omi_Adio",
-      "Onireke",
-      "Orogun",
-      "Osekan",
-      "Otu",
-      "Podo",
-      "Samonda",
-      "Sango",
-      "Sepeteri",
-      "Tede",
-      "UI",
-      "Yemetu",
-    ],
+    towns: TOWNS,
     cities: ["Ibadan", "Ogbomosho", "Oyo", "Iseyin", "Saki"],
     localGovernments: [
       "Afijio",
@@ -156,50 +86,50 @@ const RegisterBusiness = ({ onSuccess }) => {
 
   const businessCategories = [
     "AGRIBUSINESS",
-    "MANUFACTURING",
-    "RETAIL_WHOLESALE",
-    "TECHNOLOGY",
-    "HEALTHCARE",
-    "EDUCATION",
-    "TOURISM_HOSPITALITY",
-    "REAL_ESTATE",
-    "TRANSPORT_LOGISTICS",
-    "FINANCIAL_SERVICES",
-    "ENERGY",
-    "MINING",
-    "CREATIVE_ENTERTAINMENT",
-    "PROFESSIONAL_SERVICES",
-    "ENVIRONMENTAL_SERVICES",
-    "SECURITY_SERVICES",
-    "TELECOMMUNICATIONS",
-    "MEDIA_PUBLISHING",
-    "AUTOMOTIVE",
-    "PERSONAL_SERVICES",
-    "HOUSEHOLD_SERVICES",
     "AGRICULTURE",
+    "AUTOMOTIVE",
     "BEAUTY_PERSONAL_CARE",
     "CONSTRUCTION",
+    "CREATIVE_ENTERTAINMENT",
+    "EDUCATION",
+    "ENERGY",
     "ENERGY_UTILITIES",
     "ENTERTAINMENT_EVENTS",
+    "ENVIRONMENTAL_SERVICES",
     "FASHION_APPAREL",
+    "FINANCIAL_SERVICES",
     "FOOD_BEVERAGES",
     "GOVERNMENT_PUBLIC_SERVICES",
+    "HEALTHCARE",
     "HOME_LIVING",
     "HOSPITALITY_TOURISM",
+    "HOUSEHOLD_SERVICES",
     "INDUSTRIAL_MANUFACTURING",
     "INFORMATION_TECHNOLOGY",
     "LEGAL_SERVICES",
     "LOGISTICS_TRANSPORTATION",
+    "MANUFACTURING",
     "MARKETING_ADVERTISING",
     "MEDIA_COMMUNICATIONS",
+    "MEDIA_PUBLISHING",
+    "MINING",
     "NONPROFIT_COMMUNITY",
+    "PERSONAL_SERVICES",
     "PET_ANIMAL_SERVICES",
+    "PROFESSIONAL_SERVICES",
+    "REAL_ESTATE",
     "RELIGIOUS_ORGANIZATIONS",
     "REPAIR_MAINTENANCE",
     "RETAIL_ECOMMERCE",
+    "RETAIL_WHOLESALE",
     "SAFETY_SECURITY",
+    "SECURITY_SERVICES",
     "SPORTS_FITNESS",
+    "TECHNOLOGY",
+    "TELECOMMUNICATIONS",
+    "TOURISM_HOSPITALITY",
     "TRADES_ARTISANS",
+    "TRANSPORT_LOGISTICS",
     "WHOLESALE_DISTRIBUTION",
     "OTHER",
   ];
@@ -385,7 +315,7 @@ const RegisterBusiness = ({ onSuccess }) => {
           address2: data.additionalAddress || null,
           town: data.town,
           city: data.city,
-          lg: data.localGovernment,
+          lg: data.localGovernment || null,
         },
       ],
       contactUrls: filteredSocialLinks,
@@ -680,28 +610,20 @@ const RegisterBusiness = ({ onSuccess }) => {
               className="block text-sm font-medium text-gray-700"
               style={{ marginBottom: "5px" }}
             >
-              Local Government
+              Local Government (Optional)
             </label>
             <select
               style={{ padding: "10px" }}
-              className={`w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.localGovernment ? "border-red-500" : "border-gray-300"
-                }`}
-              {...register("localGovernment", {
-                required: "Local Government is required",
-              })}
+              className="w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {...register("localGovernment")}
             >
-              <option value="">Select Local Government</option>
+              <option value="">Select Local Government (Optional)</option>
               {formatList(oyoStateData.localGovernments).map((lg) => (
                 <option key={lg} value={lg.replace(/ /g, "_")}>
                   {lg}
                 </option>
               ))}
             </select>
-            {errors.localGovernment && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.localGovernment.message}
-              </p>
-            )}
           </div>
         </div>
 
