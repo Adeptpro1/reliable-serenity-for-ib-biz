@@ -1,0 +1,41 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.com.adepttechnologies.debising"],
+        "components": [
+          {
+            "/": "/blog*",
+            "exclude": true,
+            "comment": "Exclude blog pages from Universal Links so they open on web"
+          },
+          {
+            "/": "/ad*",
+            "exclude": true,
+            "comment": "Exclude advertise pages from Universal Links so they open on web"
+          },
+          {
+            "/": "/events*",
+            "exclude": true,
+            "comment": "Exclude events pages from Universal Links so they open on web"
+          },
+          {
+            "/": "/admin*",
+            "exclude": true,
+            "comment": "Exclude admin pages from Universal Links so they open on web"
+          },
+          {
+            "/": "/sponsors*",
+            "exclude": true,
+            "comment": "Exclude sponsors pages from Universal Links so they open on web"
+          },
+          {
+            "/": "/*",
+            "comment": "Match business profile slugs and general paths — routes to the installed Debisi app"
+          }
+        ]
+      }
+    ]
+  }
+}
+
