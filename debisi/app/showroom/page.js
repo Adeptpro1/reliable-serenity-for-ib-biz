@@ -397,7 +397,7 @@ export default function ShowroomWebPlaceholder() {
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-12">
             <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-200">
               <FaPlay className="text-purple-400 text-xs" />
-              <span>Full-Screen Short Videos</span>
+              <span>Full-Screen Videos</span>
             </div>
             <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-200">
               <FaHeart className="text-rose-400 text-xs" />
