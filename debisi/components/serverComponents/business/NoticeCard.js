@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { FiShare2, FiHeart, FiClock, FiSend } from "react-icons/fi";
+import { FiShare2, FiHeart, FiClock, FiSend, FiChevronLeft, FiChevronRight, FiImage } from "react-icons/fi";
 import { FaWhatsapp, FaFacebook, FaTwitter, FaCopy } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import Modal from "../../otherComponents/Modal";
@@ -41,6 +41,7 @@ const NoticeCard = ({
   const [sharesCount, setSharesCount] = useState(shares || 0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const key = currentUser ? `submitted_notices_${currentUser.id}` : "submitted_notices_guest";
@@ -83,7 +84,7 @@ const NoticeCard = ({
 
   const origin = typeof window !== "undefined" && !window.location.hostname.includes("localhost")
     ? window.location.origin
-    : "https://debisi.ng";
+    : "https://www.debisi.ng";
   const shareUrl = business?.slug
     ? `${origin}/${business.slug}`
     : `${origin}/directory?search=${encodeURIComponent(business?.name || "")}&tab=Noticeboard`;
@@ -327,33 +328,165 @@ const NoticeCard = ({
           boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
         }}
       >
-        {/* Notice Images Preview */}
+        {/* Notice Images Preview / Carousel */}
         {images && images.length > 0 && (
           <div
             style={{
               position: "relative",
-              height: "160px",
+              height: "165px",
+              width: "100%",
               overflow: "hidden",
+              backgroundColor: "#f8f9fa",
             }}
           >
             <Image
-              src={images[0].imageUrl}
+              src={images[currentImageIndex]?.imageUrl || images[0].imageUrl}
               alt={title || "Notice image"}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            width={800} height={800} />
+              style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.2s" }}
+              width={800}
+              height={800}
+            />
+
+            {/* Carousel navigation controls if more than 1 image */}
+            {images.length > 1 && (
+              <>
+                {/* Previous button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "8px",
+                    transform: "translateY(-50%)",
+                    backgroundColor: "rgba(0, 0, 0, 0.45)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "28px",
+                    height: "28px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 3,
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.75)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.45)")}
+                  aria-label="Previous image"
+                >
+                  <FiChevronLeft size={16} />
+                </button>
+
+                {/* Next button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    right: "8px",
+                    transform: "translateY(-50%)",
+                    backgroundColor: "rgba(0, 0, 0, 0.45)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "28px",
+                    height: "28px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 3,
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.75)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.45)")}
+                  aria-label="Next image"
+                >
+                  <FiChevronRight size={16} />
+                </button>
+
+                {/* Counter pill */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    left: "10px",
+                    backgroundColor: "rgba(0, 0, 0, 0.55)",
+                    backdropFilter: "blur(4px)",
+                    color: "#ffffff",
+                    padding: "3px 8px",
+                    borderRadius: "12px",
+                    fontSize: "11px",
+                    fontWeight: "600",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    zIndex: 3,
+                  }}
+                >
+                  <FiImage size={11} /> {currentImageIndex + 1}/{images.length}
+                </div>
+
+                {/* Pagination dots */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "8px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    display: "flex",
+                    gap: "5px",
+                    padding: "3px 7px",
+                    borderRadius: "12px",
+                    backgroundColor: "rgba(0, 0, 0, 0.4)",
+                    backdropFilter: "blur(4px)",
+                    zIndex: 3,
+                  }}
+                >
+                  {images.map((_, idx) => (
+                    <span
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(idx);
+                      }}
+                      style={{
+                        width: currentImageIndex === idx ? "14px" : "6px",
+                        height: "6px",
+                        borderRadius: currentImageIndex === idx ? "4px" : "50%",
+                        backgroundColor: currentImageIndex === idx ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
+                        cursor: "pointer",
+                        transition: "all 0.25s ease",
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
             {boosted && (
               <div
                 style={{
                   position: "absolute",
-                  top: "12px",
-                  right: "12px",
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  top: "10px",
+                  right: "10px",
+                  backgroundColor: "rgba(255, 255, 255, 0.92)",
                   padding: "4px 8px",
                   borderRadius: "20px",
                   fontSize: "10px",
                   fontWeight: "700",
                   color: "#f97316",
                   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  zIndex: 3,
                 }}
               >
                 🔥 PREMIUM
