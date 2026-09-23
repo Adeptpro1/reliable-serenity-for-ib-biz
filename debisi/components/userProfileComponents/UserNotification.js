@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation } from "@apollo/client";
 import { useState } from "react";
-import { FaBell, FaCheck, FaTrash, FaTimes } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { FaBell, FaCheck, FaTrash, FaTimes, FaArrowRight } from "react-icons/fa";
 import Modal from "@/components/otherComponents/Modal";
 import {
   GET_MY_NOTIFICATIONS,
@@ -11,6 +12,7 @@ import {
 } from "@/graphql/queries/notifications";
 
 const UserNotification = () => {
+  const router = useRouter();
   const [selectedNotification, setSelectedNotification] = useState(null);
 
   const { data, loading, error, refetch } = useQuery(GET_MY_NOTIFICATIONS, {
@@ -233,9 +235,45 @@ const UserNotification = () => {
             <p className="text-gray-600 leading-relaxed">
               {selectedNotification.content}
             </p>
-            <p className="text-xs text-gray-400 mt-4">
+            <p className="text-xs text-gray-400 mt-4 mb-4">
               {new Date(selectedNotification.createdAt).toLocaleString()}
             </p>
+
+            {(() => {
+              const combined = `${selectedNotification.title || ""} ${selectedNotification.content || ""}`.toLowerCase();
+              let action = null;
+              if (combined.includes("business of the week") || combined.includes("botw")) {
+                action = { label: "Apply for Business of the Week", tab: "botw" };
+              } else if (combined.includes("wallet") || combined.includes("funding")) {
+                action = { label: "Go to Wallet", tab: "wallet" };
+              } else if (combined.includes("verification") || combined.includes("verified")) {
+                action = { label: "View Verification", tab: "verification" };
+              } else if (combined.includes("showroom") || combined.includes("video")) {
+                action = { label: "View Showroom", path: "/showroom" };
+              }
+
+              if (!action) return null;
+
+              return (
+                <div className="pt-2 border-t border-gray-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedNotification(null);
+                      if (action.path) {
+                        router.push(action.path);
+                      } else if (action.tab) {
+                        router.push(`?tab=${action.tab}`);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer"
+                  >
+                    <span>{action.label}</span>
+                    <FaArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </Modal>
       )}
