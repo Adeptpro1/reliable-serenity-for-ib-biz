@@ -8,6 +8,7 @@ import { UPDATE_USER_PROFILE, DELETE_USER } from "../../graphql/mutations/user/a
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePassword from "../authComponents/ChangePassword";
 import { formatList, formatLabel } from "@/utils/formatters";
+import { TOWNS } from "@/utils/locations";
 import toast from "react-hot-toast";
 
 const EditProfile = ({ userData }) => {
@@ -235,78 +236,7 @@ const EditProfile = ({ userData }) => {
 
   const cityOptions = ["Ibadan", "Ogbomosho", "Oyo", "Iseyin", "Saki"];
 
-  const townOptions = [
-    "Adegbayi",
-    "Adeoyo",
-    "Agbowo",
-    "Agodi",
-    "Ago_Are",
-    "Akanran",
-    "Akinyele",
-    "Ajibode",
-    "Akobo",
-    "Alakia",
-    "Alalubosa",
-    "Apata",
-    "Apete",
-    "Apatere",
-    "Apomu",
-    "Awe",
-    "Bashorun",
-    "Beere",
-    "Bodija",
-    "Challenge",
-    "Dugbe",
-    "Egbeda",
-    "Eleyele",
-    "Eruwa",
-    "Felele",
-    "Fiditi",
-    "Foko",
-    "Idi_Ayunre",
-    "Idere",
-    "Igbo_Ora",
-    "Igboho",
-    "Igbeti",
-    "Ilero",
-    "Ilora",
-    "Jobele",
-    "Jericho",
-    "Kisi",
-    "Labiran",
-    "Lalupon",
-    "Lanlate",
-    "Mokola",
-    "Monatan",
-    "Moniya",
-    "Oja_ba",
-    "Oje",
-    "Ojoo",
-    "OkeAdo",
-    "OkeBola",
-    "OkeOffa",
-    "OkePadi",
-    "Okeho",
-    "Olanla",
-    "Ologuneru",
-    "Olodo",
-    "Olorunda",
-    "Olorunsogo",
-    "Olojuoro",
-    "Oluyole",
-    "Omi_Adio",
-    "Onireke",
-    "Orogun",
-    "Osekan",
-    "Otu",
-    "Podo",
-    "Samonda",
-    "Sango",
-    "Sepeteri",
-    "Tede",
-    "UI",
-    "Yemetu",
-  ];
+  const townOptions = TOWNS;
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
