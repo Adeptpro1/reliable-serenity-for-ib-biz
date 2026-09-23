@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation"; 
 import { FaHeart, FaShareAlt, FaDownload, FaArrowLeft, FaPlay } from "react-icons/fa";
 import { useSwipeable } from "react-swipeable";
-import { useQuery } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import Image from "next/image";
 import { GET_BUSINESS_VIDEOS } from "@/graphql/queries/business/videos";
+import { VIEW_VIDEO, LIKE_VIDEO } from "@/graphql/mutations/business/videos";
 import LoadingSpinner from "@/components/otherComponents/LoadingSpinner";
 
 const VideoPlayer = () => {
@@ -13,6 +14,8 @@ const VideoPlayer = () => {
   const { data, loading, error } = useQuery(GET_BUSINESS_VIDEOS, {
     variables: { pagination: { take: 20 } }
   });
+  const [viewVideo] = useMutation(VIEW_VIDEO);
+  const [likeVideo] = useMutation(LIKE_VIDEO);
 
   const videos = data?.businessVideos || [];
   const backUrl = "/directory"; 
@@ -20,6 +23,39 @@ const VideoPlayer = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [screenHeight, setScreenHeight] = useState("100vh");
   const [isStarted, setIsStarted] = useState(false);
+  const [viewedIds, setViewedIds] = useState(new Set());
+  const [likedIds, setLikedIds] = useState(new Set());
+
+  const currentVideo = videos[currentIndex];
+
+  // Record view when video playback starts
+  useEffect(() => {
+    if (isStarted && currentVideo?.id && !viewedIds.has(currentVideo.id)) {
+      setViewedIds((prev) => new Set(prev).add(currentVideo.id));
+      viewVideo({ variables: { id: currentVideo.id } }).catch((err) => {
+        console.error("Failed to record video view:", err);
+      });
+    }
+  }, [isStarted, currentVideo?.id, viewedIds, viewVideo]);
+
+  // Sync likedIds from server isLiked and localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("debisi_liked_videos");
+      const localLiked = stored ? JSON.parse(stored) : [];
+      const set = new Set(localLiked);
+      videos.forEach((v) => {
+        if (v.isLiked) set.add(v.id);
+      });
+      setLikedIds(set);
+    } catch {
+      const set = new Set();
+      videos.forEach((v) => {
+        if (v.isLiked) set.add(v.id);
+      });
+      setLikedIds(set);
+    }
+  }, [videos]);
 
   // Reset play state when video changes
   useEffect(() => {
@@ -88,8 +124,28 @@ const VideoPlayer = () => {
   });
 
   /** Handle Like */
-  const handleLike = () => {
-    alert("Video liked!");
+  const handleLike = async () => {
+    if (!currentVideo?.id) return;
+    const isCurrentlyLiked = likedIds.has(currentVideo.id);
+
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      if (isCurrentlyLiked) {
+        next.delete(currentVideo.id);
+      } else {
+        next.add(currentVideo.id);
+      }
+      try {
+        localStorage.setItem("debisi_liked_videos", JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+
+    try {
+      await likeVideo({ variables: { id: currentVideo.id } });
+    } catch (error) {
+      console.error("Error toggling video like:", error);
+    }
   };
 
   /** Handle Share */
@@ -142,8 +198,6 @@ const VideoPlayer = () => {
       </div>
     );
   }
-
-  const currentVideo = videos[currentIndex];
 
   const getBunnyThumbnailUrl = (videoUrl) => {
     if (!videoUrl) return "";
@@ -231,11 +285,15 @@ const VideoPlayer = () => {
       <div style={{ position: 'absolute', bottom: '100px', left: '20px', color: '#fff', zIndex: 50, textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>{currentVideo.business?.name}</h2>
-          {currentVideo.boosted && (
+          {currentVideo.boosted ? (
             <span style={{ backgroundColor: '#7c3aed', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>
               ⚡ Sponsored
             </span>
-          )}
+          ) : currentVideo.isFreeUpload ? (
+            <span style={{ backgroundColor: '#059669', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '700' }}>
+              ⚡ Free ({currentVideo.views || 0}/50 views)
+            </span>
+          ) : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#cbd5e1', marginTop: '4px' }}>
           <span>🎬 {currentVideo.views || 0} views</span>
@@ -257,7 +315,18 @@ const VideoPlayer = () => {
 
       {/* Side Buttons */}
       <div style={{ position: 'absolute', right: '20px', bottom: '100px', display: 'flex', flexDirection: 'column', gap: '16px', color: '#fff', zIndex: 50 }}>
-        <button style={{ padding: '12px', backgroundColor: 'rgba(31, 41, 55, 0.8)', borderRadius: '9999px', border: 'none', cursor: 'pointer', color: '#fff' }} onClick={handleLike}>
+        <button 
+          style={{ 
+            padding: '12px', 
+            backgroundColor: likedIds.has(currentVideo.id) ? 'rgba(239, 68, 68, 0.9)' : 'rgba(31, 41, 55, 0.8)', 
+            borderRadius: '9999px', 
+            border: 'none', 
+            cursor: 'pointer', 
+            color: '#fff',
+            transition: 'all 0.2s ease'
+          }} 
+          onClick={handleLike}
+        >
           <FaHeart style={{ fontSize: '24px' }} />
         </button>
         <button style={{ padding: '12px', backgroundColor: 'rgba(31, 41, 55, 0.8)', borderRadius: '9999px', border: 'none', cursor: 'pointer', color: '#fff' }} onClick={handleShare}>
