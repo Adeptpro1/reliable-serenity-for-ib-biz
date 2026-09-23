@@ -15,6 +15,8 @@ export const GET_BUSINESS_VIDEOS = gql`
       boostExpiresAt
       duration
       isSponsored
+      isFreeUpload
+      isLiked
       locationBoundary
       expiresAt
       createdAt
@@ -80,6 +82,8 @@ export const GET_BUSINESS_VIDEOS_BY_BUSINESS = gql`
       boostExpiresAt
       duration
       isSponsored
+      isFreeUpload
+      isLiked
       locationBoundary
       expiresAt
       createdAt
