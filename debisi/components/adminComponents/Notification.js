@@ -31,8 +31,8 @@ const GET_ALL_NOTIFICATIONS = gql`
 `;
 
 const BROADCAST_NOTIFICATION = gql`
-  mutation BroadcastNotification($title: String!, $content: String!, $type: String, $userId: ID, $sendPush: Boolean) {
-    broadcastNotification(title: $title, content: $content, type: $type, userId: $userId, sendPush: $sendPush)
+  mutation BroadcastNotification($title: String!, $content: String!, $type: String, $userId: ID, $sendPush: Boolean, $deepLink: String) {
+    broadcastNotification(title: $title, content: $content, type: $type, userId: $userId, sendPush: $sendPush, deepLink: $deepLink)
   }
 `;
 
@@ -55,8 +55,21 @@ const GET_USERS_LIST = gql`
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+// Keep in sync with validateInAppDeepLink in backend notificationResolvers.js
+const IN_APP_PATH_REGEX = /^\/(?!\/)[A-Za-z0-9\-._~\/()?=&%]*$/;
+const MAX_DEEP_LINK_LENGTH = 200;
+const isValidInAppPath = (path) =>
+  path.length <= MAX_DEEP_LINK_LENGTH && IN_APP_PATH_REGEX.test(path) && !path.includes("..");
+
 const NotificationsForAdmin = () => {
-  const [form, setForm] = useState({ title: "", content: "", type: "ALL", userId: "", sendPush: false });
+  const [form, setForm] = useState({
+    title: "",
+    content: "",
+    type: "ALL",
+    userId: "",
+    sendPush: false,
+    deepLink: "/notifications",
+  });
   const [page, setPage] = useState(0);
   const [readFilter, setReadFilter] = useState("ALL"); // ALL, UNREAD, READ
   const [filteredNotifications, setFilteredNotifications] = useState([]);
@@ -82,7 +95,14 @@ const NotificationsForAdmin = () => {
   const [broadcastNotification, { loading: broadcasting }] = useMutation(BROADCAST_NOTIFICATION, {
     onCompleted: () => {
       toast.success("Notification sent!");
-      setForm({ title: "", content: "", type: "ALL", userId: "", sendPush: false });
+      setForm({
+        title: "",
+        content: "",
+        type: "ALL",
+        userId: "",
+        sendPush: false,
+        deepLink: "/notifications",
+      });
       refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -109,6 +129,11 @@ const NotificationsForAdmin = () => {
       return toast.error("Please select a specific recipient.");
     }
 
+    const deepLink = form.deepLink?.trim() || "/notifications";
+    if (form.sendPush && !isValidInAppPath(deepLink)) {
+      return toast.error("Destination must be an in-app path starting with '/', e.g. /showroom.");
+    }
+
     broadcastNotification({
       variables: {
         title: form.title,
@@ -116,6 +141,7 @@ const NotificationsForAdmin = () => {
         type: form.type === "SPECIFIC" ? null : form.type,
         userId: form.type === "SPECIFIC" ? form.userId : null,
         sendPush: form.sendPush,
+        deepLink: form.sendPush ? deepLink : null,
       },
     });
   };
@@ -303,9 +329,63 @@ const NotificationsForAdmin = () => {
               className="w-4 h-4 text-blue-600 border-gray-200 rounded focus:ring-blue-500 cursor-pointer"
             />
             <label htmlFor="sendPush" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
-              Send as Push Notification (routes users to notifications screen)
+              Send as Mobile Push Notification
             </label>
           </div>
+
+          {form.sendPush && (
+            <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3.5 space-y-2.5">
+              <label className="block text-xs font-bold text-blue-900 uppercase tracking-wider">
+                Destination Screen (When user taps notification)
+              </label>
+
+              {/* Quick Route Preset Pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: "🔔 Notifications", path: "/notifications" },
+                  { label: "🎥 Showroom", path: "/showroom" },
+                  { label: "📋 Noticeboard", path: "/dashboard/notices" },
+                  { label: "🏆 BOTW Spotlight", path: "/dashboard/botw" },
+                  { label: "🛍️ Shop & Products", path: "/shop" },
+                  { label: "💳 Wallet Top-Up", path: "/dashboard/wallet" },
+                  { label: "🏢 Business Profile", path: "/dashboard/edit-business" },
+                ].map((preset) => (
+                  <button
+                    key={preset.path}
+                    type="button"
+                    onClick={() => setForm({ ...form, deepLink: preset.path })}
+                    className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-all ${
+                      form.deepLink === preset.path
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom Input */}
+              <div className="mt-1">
+                <input
+                  type="text"
+                  placeholder="e.g. /showroom, /dashboard/botw, /business/your-slug"
+                  value={form.deepLink}
+                  onChange={(e) => setForm({ ...form, deepLink: e.target.value })}
+                  maxLength={MAX_DEEP_LINK_LENGTH}
+                  className={`block w-full border rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 text-xs text-gray-800 ${
+                    form.deepLink.trim() && !isValidInAppPath(form.deepLink.trim())
+                      ? "border-red-300 focus:ring-red-500"
+                      : "border-gray-200 focus:ring-blue-500"
+                  }`}
+                  style={{ padding: "8px 12px" }}
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Enter an in-app path starting with <code className="text-blue-700">/</code> (e.g. <code className="text-blue-700">/showroom</code>, <code className="text-blue-700">/business/[slug]</code>). External links are not allowed.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="flex justify-end">
             <button
               type="submit"
