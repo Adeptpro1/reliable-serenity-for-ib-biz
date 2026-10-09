@@ -117,6 +117,9 @@ function Footer() {
         <p className="text-xs font-medium text-white hidden sm:block">
           Powered by <a href="mailto:isalesng@gmail.com" className="text-white hover:text-blue-300 transition-colors">iSalesNG Emporium</a>
         </p>
+                    <p className="text-xs font-medium text-white hidden sm:block">
+          Developed by <a href="https://adepttech.com.ng/" className="text-white hover:text-blue-300 transition-colors">The Adept Professionals</a>
+        </p>
       </div>
     </div>
   );
